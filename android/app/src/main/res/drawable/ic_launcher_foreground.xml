@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive icon foreground: football (ballon), optically centered on the 108dp grid.
+     Vert sportif (#00E676) sur couture blanche, fond sombre du ballon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Couture extérieure (blanc) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,14 a40,40 0 1,0 0.01,0 Z" />
+    <!-- Ballon (fond sombre) -->
+    <path
+        android:fillColor="#0A0E0A"
+        android:pathData="M54,18 a36,36 0 1,0 0.01,0 Z" />
+    <!-- Pentagone central (vert) -->
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M54,42 L62.6,46.5 L60.5,56 L47.5,56 L45.4,46.5 Z" />
+    <!-- Coutures vers l'extérieur -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M54,42 L54,21 M62.6,46.5 L79,31 M60.5,56 L74,69 M47.5,56 L34,69 M45.4,46.5 L29,31" />
+</vector>
