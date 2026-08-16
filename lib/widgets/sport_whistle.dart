@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_const_declarations
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
@@ -32,8 +33,11 @@ class SportBallPainter extends CustomPainter {
     for (int i = 0; i < 5; i++) {
       final a = -math.pi / 2 + i * (2 * math.pi / 5);
       final p = Offset(54 + r * math.cos(a), 54 + r * math.sin(a));
-      if (i == 0) pent.moveTo(p.dx, p.dy);
-      else pent.lineTo(p.dx, p.dy);
+      if (i == 0) {
+        pent.moveTo(p.dx, p.dy);
+      } else {
+        pent.lineTo(p.dx, p.dy);
+      }
     }
     pent.close();
     canvas.drawPath(pent, Paint()..color = accent);
