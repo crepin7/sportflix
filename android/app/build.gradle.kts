@@ -9,6 +9,15 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    // Force une version récente d'AppCompat. media_kit tire en transitif
+    // appcompat-1.1.0 dont la ressource <color> est invalide pour l'AAPT2
+    // moderne -> mergeReleaseResources échoue ("Invalid <color>").
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.appcompat:appcompat:1.7.0")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
