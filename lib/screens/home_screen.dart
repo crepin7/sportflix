@@ -3,7 +3,6 @@ import '../models/channel.dart';
 import '../services/channel_service.dart';
 import '../widgets/channel_card.dart';
 import '../theme.dart';
-import '../widgets/sport_whistle.dart';
 import 'player_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -64,13 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppTheme.primary,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: CustomPaint(
-                            painter: SportBallPainter(),
-                            size: Size(28, 28),
-                          ),
+                        child: const Image(
+                          image: AssetImage('assets/icon.png'),
+                          width: 36,
+                          height: 36,
                         ),
                       ),
                       const SizedBox(width: 12),
