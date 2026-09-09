@@ -8,7 +8,7 @@ android {
     ndkVersion = flutter.ndkVersion
     configurations.all {
         resolutionStrategy {
-            force("androidx.appcompat:appcompat:1.4.2")
+            force("androidx.appcompat:appcompat:1.7.0")
         }
     }
     compileOptions {
