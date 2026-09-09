@@ -2,15 +2,14 @@ name: Build Flutter APK
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+    branches: ['**']
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,9 +41,6 @@ jobs:
         run: flutter build apk --release
 
       - name: Build APK (debug)
-        # APK debug : active `debugPrint` + `MPVLogLevel.debug`. Sans lui,
-        # les logs mpv (raison pour laquelle un flux refuse la lecture) ne
-        # sont pas visibles sur l'appareil.
         run: flutter build apk --debug
 
       - name: Upload release artifact
