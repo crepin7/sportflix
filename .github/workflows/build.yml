@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -38,31 +38,11 @@ jobs:
       - name: Tests
         run: flutter test
 
-      - name: Build APK (release) with appcompat patch loop
-        run: |
-          (while true; do
-            find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
-            find build -path "*merged.dir/values/values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
-            sleep 0.2
-          done) &
-          PATCH_PID=$!
-          flutter build apk --release
-          STATUS=$?
-          kill $PATCH_PID || true
-          exit $STATUS
+      - name: Build APK (release)
+        run: flutter build apk --release
 
-      - name: Build APK (debug) with patch loop
-        run: |
-          (while true; do
-            find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
-            find build -path "*merged.dir/values/values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
-            sleep 0.2
-          done) &
-          PATCH_PID=$!
-          flutter build apk --debug
-          STATUS=$?
-          kill $PATCH_PID || true
-          exit $STATUS
+      - name: Build APK (debug)
+        run: flutter build apk --debug
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
