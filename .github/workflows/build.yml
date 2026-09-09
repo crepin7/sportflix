@@ -25,7 +25,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.35.4'
 
       - name: Install dependencies
         run: flutter pub get
@@ -41,29 +40,29 @@ jobs:
 
       - name: Build APK (release) with appcompat patch loop
         run: |
-          # patch en arrière-plan pendant que Gradle tourne
           (while true; do
             find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
             find build -path "*merged.dir/values/values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
-            sleep 0.3
+            sleep 0.2
           done) &
           PATCH_PID=$!
-          echo "patch loop pid $PATCH_PID"
-          # lance le build
-          flutter build apk --release || (kill $PATCH_PID; exit 1)
+          flutter build apk --release
+          STATUS=$?
           kill $PATCH_PID || true
-          echo "release built"
+          exit $STATUS
 
       - name: Build APK (debug) with patch loop
         run: |
           (while true; do
             find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
             find build -path "*merged.dir/values/values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
-            sleep 0.3
+            sleep 0.2
           done) &
           PATCH_PID=$!
-          flutter build apk --debug || (kill $PATCH_PID; exit 1)
+          flutter build apk --debug
+          STATUS=$?
           kill $PATCH_PID || true
+          exit $STATUS
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
