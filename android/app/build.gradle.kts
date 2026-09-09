@@ -9,12 +9,9 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
-    // Force une version récente d'AppCompat. media_kit tire en transitif
-    // appcompat-1.1.0 dont la ressource <color> est invalide pour l'AAPT2
-    // moderne -> mergeReleaseResources échoue ("Invalid <color>").
     configurations.all {
         resolutionStrategy {
-            force("androidx.appcompat:appcompat:1.7.0")
+            force("androidx.appcompat:appcompat:1.6.1")
         }
     }
 
@@ -24,10 +21,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.crepin.sportflix"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -36,8 +30,6 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
