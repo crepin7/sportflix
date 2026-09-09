@@ -9,7 +9,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,14 +25,15 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.35.4'
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Patch appcompat invalid color (one-shot)
         run: |
-          echo "Patching #6680cbc4 in gradle cache if present..."
-          find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/g' {} \; 2>/dev/null || echo "nothing to patch pre-build (normal, patch runs also in Gradle doFirst)"
+          echo "Patching #6680cbc4 if present (runner ubuntu-22.04)..."
+          find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
 
       - name: Generate launcher icons
         run: flutter pub run flutter_launcher_icons
