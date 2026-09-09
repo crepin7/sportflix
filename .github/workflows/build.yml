@@ -28,6 +28,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Patch appcompat invalid color (one-shot)
+        run: |
+          echo "Patching #6680cbc4 in gradle cache if present..."
+          find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/g' {} \; 2>/dev/null || echo "nothing to patch pre-build (normal, patch runs also in Gradle doFirst)"
+
       - name: Generate launcher icons
         run: flutter pub run flutter_launcher_icons
 
@@ -38,10 +43,10 @@ jobs:
         run: flutter test
 
       - name: Build APK (release)
-        run: flutter build apk --release --android-skip-build-dependency-validation
+        run: flutter build apk --release
 
       - name: Build APK (debug)
-        run: flutter build apk --debug --android-skip-build-dependency-validation
+        run: flutter build apk --debug
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
