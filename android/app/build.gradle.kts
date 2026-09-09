@@ -1,7 +1,6 @@
-import java.io.File
-
 plugins {
     id("com.android.application")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -10,19 +9,16 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
-    configurations.all {
-        resolutionStrategy {
-            force("androidx.appcompat:appcompat:1.7.0")
-        }
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
     defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.crepin.sportflix"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -31,40 +27,9 @@ android {
 
     buildTypes {
         release {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-        }
-    }
-}
-
-// One-shot fix: AAPT2 9.x refuse #6680cbc4 (8-digit ARGB) d'appcompat
-// On patch le cache Gradle et le merged dir avant compilation
-tasks.matching { it.name.contains("merge") && it.name.contains("Resources") }.configureEach {
-    doFirst {
-        val home = System.getProperty("user.home")
-        val cache = File("$home/.gradle/caches")
-        if (cache.exists()) {
-            cache.walkTopDown().forEach { f ->
-                if (f.isFile && f.name == "values.xml" && f.path.contains("appcompat")) {
-                    val txt = f.readText()
-                    if (txt.contains("#6680cbc4")) {
-                        f.writeText(txt.replace("#6680cbc4", "#80000000"))
-                        println("Patched appcompat color in ${f.path}")
-                    }
-                }
-            }
-        }
-        // aussi le dossier merged s'il existe déjà
-        val mergedDir = File("${project.layout.buildDirectory.get().asFile.path}/intermediates")
-        if (mergedDir.exists()) {
-            mergedDir.walkTopDown().forEach { f ->
-                if (f.isFile && f.name == "values.xml") {
-                    val txt = f.readText()
-                    if (txt.contains("#6680cbc4")) {
-                        f.writeText(txt.replace("#6680cbc4", "#80000000"))
-                        println("Patched merged values.xml ${f.path}")
-                    }
-                }
-            }
         }
     }
 }

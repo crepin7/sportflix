@@ -30,11 +30,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Patch appcompat invalid color (one-shot)
-        run: |
-          echo "Patching #6680cbc4 if present (runner ubuntu-22.04)..."
-          find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
-
       - name: Generate launcher icons
         run: flutter pub run flutter_launcher_icons
 
@@ -44,11 +39,31 @@ jobs:
       - name: Tests
         run: flutter test
 
-      - name: Build APK (release)
-        run: flutter build apk --release
+      - name: Build APK (release) with appcompat patch loop
+        run: |
+          # patch en arrière-plan pendant que Gradle tourne
+          (while true; do
+            find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
+            find build -path "*merged.dir/values/values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
+            sleep 0.3
+          done) &
+          PATCH_PID=$!
+          echo "patch loop pid $PATCH_PID"
+          # lance le build
+          flutter build apk --release || (kill $PATCH_PID; exit 1)
+          kill $PATCH_PID || true
+          echo "release built"
 
-      - name: Build APK (debug)
-        run: flutter build apk --debug
+      - name: Build APK (debug) with patch loop
+        run: |
+          (while true; do
+            find ~/.gradle -name "values.xml" -path "*appcompat*" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
+            find build -path "*merged.dir/values/values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null
+            sleep 0.3
+          done) &
+          PATCH_PID=$!
+          flutter build apk --debug || (kill $PATCH_PID; exit 1)
+          kill $PATCH_PID || true
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
