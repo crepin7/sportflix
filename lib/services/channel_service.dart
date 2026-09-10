@@ -36,7 +36,7 @@ class ChannelService {
     const Channel(
       id: 'tennis_channel',
       name: 'Tennis Channel',
-      streamUrl: 'http://151.80.18.177:86/Disney_Junior_HD/index.m3u8',
+      streamUrl: 'http://151.80.18.177:86/Canal+_cinema_HD/index.m3u8',
       logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Tennis_Channel_logo.svg/960px-Tennis_Channel_logo.svg.png',
       category: 'Tennis',
     ),
@@ -64,21 +64,21 @@ class ChannelService {
     const Channel(
       id: 'foot_plus',
       name: 'Foot+',
-      streamUrl: 'http://145.239.5.177/556a/index.m3u8',
+      streamUrl: 'http://99.27.51.147:8080/Gulli/index.m3u8',
       logoUrl: 'https://i.imgur.com/qsLLyn4.png',
       category: 'Football',
     ),
     const Channel(
       id: 'canal_sport_360',
       name: 'CANAL+ SPORT 360',
-      streamUrl: 'https://futbol9865.ultratv13.workers.dev/deportivo111/14.m3u8',
+      streamUrl: 'http://151.80.18.177:86/W9_HD/index.m3u8',
       logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Canal%2BSport_360.png',
       category: 'Généraliste',
     ),
     const Channel(
       id: 'rmc_sport_1',
       name: 'RMC Sport 1',
-      streamUrl: 'https://7nyaler.streamhostingcdn.top/stream/59/index.m3u8',
+      streamUrl: 'http://151.80.18.177:86/TMC/index.m3u8',
       logoUrl: 'https://i.imgur.com/NsFTG7u.png',
       category: 'Généraliste',
     ),
@@ -99,7 +99,7 @@ class ChannelService {
     const Channel(
       id: 'africa24_sport',
       name: 'Africa 24 Sport',
-      streamUrl: 'https://africa24.vedge.infomaniak.com/livecast/ik:africa24sport/manifest.m3u8',
+      streamUrl: 'https://lightning-tracesport-samsungau.amagi.tv/playlist.m3u8',
       logoUrl: 'https://i0.wp.com/africa24tv.com/wp-content/uploads/2023/12/LOGO-AFRICASPORT-4-HD-sans-fond.png?fit=512%2C107&ssl=1',
       category: 'Généraliste',
     ),
