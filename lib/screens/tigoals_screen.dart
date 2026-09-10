@@ -69,13 +69,13 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.sports_soccer, color: Colors.black, size: 20),
+            child: const Icon(Icons.live_tv, color: Colors.black, size: 20),
           ),
           const SizedBox(width: 10),
           const Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Tigoals — Grands Matchs', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              Text('Flux perso \u2022 WebView player', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+              Text('En direct', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('Matchs du jour', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ]),
           ),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh, color: AppTheme.textSecondary)),
@@ -100,9 +100,9 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(children: [
-        chip('live', 'LIVE ${liveCount>0?"($liveCount)":""}', Icons.circle),
+        chip('live', 'En direct ${liveCount>0?"($liveCount)":""}', Icons.circle),
         const SizedBox(width: 8),
-        chip('upcoming', 'A venir', Icons.schedule),
+        chip('upcoming', 'À venir', Icons.schedule),
         const SizedBox(width: 8),
         chip('all', 'Tous', Icons.list),
       ]),
@@ -111,9 +111,9 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
 
   Widget _body() {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
-    if (_error != null) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.error_outline, color: Colors.redAccent, size: 36), const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center), const SizedBox(height: 16), ElevatedButton(onPressed: _load, style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black), child: const Text('Reessayer'))])));
+    if (_error != null) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.error_outline, color: Colors.redAccent, size: 36), const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center), const SizedBox(height: 16), ElevatedButton(onPressed: _load, style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black), child: const Text('Réessayer'))])));
     final list = _filtered;
-    if (list.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)), const SizedBox(height: 12), const Text('Aucun match avec flux pour le moment', style: TextStyle(color: AppTheme.textSecondary)), const SizedBox(height: 8), const Text('Reviens a l\'heure des grands matchs', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)), const SizedBox(height: 16), OutlinedButton(onPressed: _load, child: const Text('Actualiser'))]));
+    if (list.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)), const SizedBox(height: 12), const Text('Aucun match pour le moment', style: TextStyle(color: AppTheme.textSecondary)), const SizedBox(height: 8), const Text('Reviens un peu plus tard', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)), const SizedBox(height: 16), OutlinedButton(onPressed: _load, child: const Text('Actualiser'))]));
     return RefreshIndicator(
       onRefresh: _load,
       color: AppTheme.primary,
@@ -128,11 +128,11 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
   }
 
   Widget _matchCard(TigoalsMatch m) {
-    final hasStream = m.channelIds.isNotEmpty || m.hasChannel;
     final isLive = m.isLive;
     final date = m.matchDate;
     final timeStr = DateFormat('dd/MM HH:mm').format(date);
     final scoreStr = (m.homeScore != 0 || m.awayScore != 0 || isLive) ? '${m.homeScore} - ${m.awayScore}' : 'vs';
+    final hasStream = m.channelIds.isNotEmpty || m.hasChannel;
     return InkWell(
       onTap: hasStream ? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TigoalsPlayerScreen(match: m))) : null,
       borderRadius: BorderRadius.circular(14),
@@ -152,9 +152,7 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
                 Text(m.leagueEn, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
               ])),
               const Spacer(),
-              if (isLive && hasStream) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), const Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
-              if (!isLive && hasStream) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(20)), child: const Text('FLUX DISPO', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold))),
-              if (!hasStream) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(20)), child: const Text('SANS FLUX', style: TextStyle(color: Colors.white38, fontSize: 10))),
+              if (isLive && hasStream) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), const Text('DIRECT', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
               const SizedBox(width: 6),
               Text(timeStr, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ]),
@@ -164,13 +162,13 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
               Column(children: [
                 Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(8)), child: Text(scoreStr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))),
                 const SizedBox(height: 4),
-                Text(hasStream ? 'Tap pour regarder' : 'Flux indisponible', style: TextStyle(color: hasStream ? AppTheme.primary : Colors.white24, fontSize: 10)),
+                Text(hasStream ? '' : '', style: const TextStyle(color: Colors.transparent, fontSize: 1)),
               ]),
               Expanded(child: _team(m.awayName, m.awayLogoUrl, false)),
             ]),
             if (hasStream) ...[
               const SizedBox(height: 10),
-              SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TigoalsPlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isLive ? 'Regarder en direct' : 'Ouvrir le flux'), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
+              SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TigoalsPlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isLive ? 'Regarder' : 'Voir le match'), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
             ],
           ],
         ),

@@ -33,7 +33,7 @@ class _RootScreenState extends State<RootScreen> {
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.tv), label: 'Chaînes'),
-            BottomNavigationBarItem(icon: Icon(Icons.sports_soccer), label: 'Grands Matchs'),
+            BottomNavigationBarItem(icon: Icon(Icons.live_tv), label: 'En direct'),
           ],
         ),
       ),
