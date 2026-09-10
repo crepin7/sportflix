@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/channel.dart';
 import '../services/channel_service.dart';
+import '../services/ads_service.dart';
 import '../widgets/channel_card.dart';
 import '../theme.dart';
 import 'player_screen.dart';
@@ -63,10 +64,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppTheme.primary,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Image(
-                          image: AssetImage('assets/icon.png'),
-                          width: 36,
-                          height: 36,
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Image.asset(
+                            'assets/icon/app_icon_foreground.png',
+                            width: 28,
+                            height: 28,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -187,6 +191,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                     ),
+            ),
+            // Bannière Start.io
+            ValueListenableBuilder<bool>(
+              valueListenable: AdsService.instance.bannerReady,
+              builder: (context, ready, _) {
+                if (!ready) return const SizedBox.shrink();
+                return AdsService.instance.bannerWidget;
+              },
             ),
           ],
         ),

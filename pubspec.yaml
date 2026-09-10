@@ -1,5 +1,5 @@
 name: sportflix
-description: "Application mobile pour regarder les chaînes de sport en français"
+description: "Application mobile pour regarder les chaines de sport en francais"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -15,8 +15,8 @@ dependencies:
   media_kit_libs_video: 1.0.7
   http: ^1.2.2
   shared_preferences: ^2.3.4
-  webview_flutter: ^4.10.0
   intl: ^0.19.0
+  startapp_sdk: ^1.0.1
 
 dev_dependencies:
   flutter_test:
@@ -25,14 +25,16 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.2
 
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: "launcher"
   ios: false
-  image_path: "assets/icon.png"
-  adaptive_icon_background: "0A0E0A"
-  adaptive_icon_foreground: "assets/icon.png"
+  image_path: "assets/icon/app_icon_full.png"
+  adaptive_icon_background: "#0A0E0A"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
   min_sdk_android: 21
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/icon.png
+    - assets/icon/app_icon_foreground.png
+    - assets/icon/app_icon_full.png
+    - assets/icon/sportflix_appbar.png

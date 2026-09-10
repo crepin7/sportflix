@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/channel.dart';
 import '../services/player_service.dart';
+import '../services/ads_service.dart';
 import '../theme.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -129,12 +130,19 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     });
   }
 
+  Future<void> _exitPlayer() async {
+    _playerService.stop();
+    if (await AdsService.instance.showInterstitial()) {}
+    if (mounted) Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) {
-        _playerService.stop();
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _exitPlayer();
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -226,8 +234,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                             color: Colors.white,
                           ),
                           onPressed: () {
-                            _playerService.stop();
-                            Navigator.of(context).pop();
+                            _exitPlayer();
                           },
                         ),
                         const SizedBox(width: 12),
