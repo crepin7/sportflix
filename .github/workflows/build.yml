@@ -43,8 +43,8 @@ jobs:
           set +e
           (while true; do
             find ~/.gradle -name "values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
-            find build -name "values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
-            sleep 0.2
+            find . -name "values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
+            sleep 0.05
           done) &
           PATCH_PID=$!
           set -e

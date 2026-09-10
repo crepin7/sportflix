@@ -52,6 +52,8 @@ tasks.matching { it.name.contains("merge") && it.name.contains("Resources") }.co
                 }
             }
         }
+    }
+    doLast {
         val mergedBase = File("${project.layout.buildDirectory.get().asFile.path}/intermediates")
         if (mergedBase.exists()) {
             mergedBase.walkTopDown().forEach { f ->
