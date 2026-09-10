@@ -12,7 +12,8 @@ android {
 
     configurations.all {
         resolutionStrategy {
-            force("androidx.appcompat:appcompat:1.7.0")
+            force("androidx.appcompat:appcompat:1.6.1")
+            force("androidx.core:core:1.9.0")
         }
     }
 
