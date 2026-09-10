@@ -39,7 +39,19 @@ jobs:
         run: flutter test
 
       - name: Build APK (release)
-        run: flutter build apk --release
+        run: |
+          set +e
+          (while true; do
+            find ~/.gradle -name "values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
+            find build -name "values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
+            sleep 0.2
+          done) &
+          PATCH_PID=$!
+          set -e
+          flutter build apk --release
+          STATUS=$?
+          kill $PATCH_PID || true
+          exit $STATUS
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
