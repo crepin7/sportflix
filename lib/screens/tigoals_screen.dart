@@ -177,9 +177,18 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
   }
 
   Widget _team(String name, String logo, bool isHome) {
-    final img = logo.startsWith('http://') ? logo.replaceFirst('http://', 'https://') : logo;
+    final isWin007 = logo.contains('zq.win007.com') || logo.contains('win007.com');
+    final img = isWin007 ? '' : (logo.startsWith('http://') ? logo.replaceFirst('http://', 'https://') : logo);
     return Column(children: [
-      Container(width: 48, height: 48, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.white12)), child: ClipOval(child: Image.network(img, fit: BoxFit.contain, errorBuilder: (_,__,___)=> const Icon(Icons.shield, color: Colors.black26)))),
+      Container(
+        width: 48, height: 48,
+        decoration: BoxDecoration(color: isWin007 ? AppTheme.primary.withValues(alpha: 0.3) : Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.white12)),
+        child: ClipOval(
+          child: isWin007
+              ? Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)))
+              : Image.network(img, fit: BoxFit.contain, errorBuilder: (_,__,___)=> Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(color: Colors.black26, fontWeight: FontWeight.bold)))),
+        ),
+      ),
       const SizedBox(height: 6),
       Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
     ]);
