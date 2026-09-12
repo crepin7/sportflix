@@ -38,25 +38,26 @@ class LiveSportsService {
   LiveSportsService._();
 
   // Grands championnats TheSportsDB (key 3 = test, pas besoin de clé perso)
+  // IDs vérifiés: 4328=PL, 4335=LaLiga, 4332=SerieA, 4331=Bundesliga, 4334=Ligue1, 4480=CL, 4481=Europa
   static const _leagues = {
-    '4328': 'Champions League',
-    '4335': 'Premier League',
+    '4328': 'Premier League',
+    '4335': 'La Liga',
     '4332': 'Serie A',
     '4331': 'Bundesliga',
     '4334': 'Ligue 1',
-    '4330': 'La Liga',
-    '4346': 'Europa League',
+    '4480': 'Champions League',
+    '4481': 'Europa League',
   };
 
   // Mapping ligue -> HLS stable déjà vérifié 200 (151.80 / 99.27 / amagi)
   static const _hlsForLeague = {
-    '4328': 'http://151.80.18.177:86/Canal+_sport_HD/index.m3u8',
+    '4328': 'https://bein-xtra-bein.amagi.tv/playlist.m3u8',
     '4335': 'https://bein-xtra-bein.amagi.tv/playlist.m3u8',
     '4332': 'http://151.80.18.177:86/Canal+_cinema_HD/index.m3u8',
     '4331': 'http://151.80.18.177:86/W9_HD/index.m3u8',
     '4334': 'http://151.80.18.177:86/Canal+_sport_HD/index.m3u8',
-    '4330': 'https://bein-xtra-bein.amagi.tv/playlist.m3u8',
-    '4346': 'http://151.80.18.177:86/TMC/index.m3u8',
+    '4480': 'http://151.80.18.177:86/Canal+_sport_HD/index.m3u8',
+    '4481': 'http://151.80.18.177:86/TMC/index.m3u8',
   };
 
   Future<List<LiveMatch>> fetchAll() async {
