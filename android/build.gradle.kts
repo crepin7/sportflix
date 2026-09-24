@@ -5,6 +5,15 @@ allprojects {
     }
 }
 
+// Force Start.io 5.3.1 (dernière compatible compileSdk 36)
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force("com.startapp:inapp-sdk:5.3.1")
+        }
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

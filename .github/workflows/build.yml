@@ -2,9 +2,9 @@ name: Build Flutter APK
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+    branches: ['**']
   workflow_dispatch:
 
 jobs:
@@ -38,25 +38,30 @@ jobs:
       - name: Tests
         run: flutter test
 
-      - name: Build APK (release)
-        run: flutter build apk --release
+      - name: Clean corrupted Gradle transforms (play-services-basement values-be bug)
+        run: |
+          rm -rf ~/.gradle/caches/*/transforms/*/transformed/play-services-basement-* 2>/dev/null || true
+          find ~/.gradle/caches -name "sedeUMuXc" -delete 2>/dev/null || true
+          find ~/.gradle/caches -path "*play-services-basement*values-be*" -type f ! -name "*.xml" -delete 2>/dev/null || true
 
-      - name: Build APK (debug)
-        # APK debug : active `debugPrint` + `MPVLogLevel.debug`. Sans lui,
-        # les logs mpv (raison pour laquelle un flux refuse la lecture) ne
-        # sont pas visibles sur l'appareil.
-        run: flutter build apk --debug
+      - name: Build APK (release)
+        run: |
+          set +e
+          (while true; do
+            find ~/.gradle/caches -path "*appcompat*values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
+            find . -path "*appcompat*values.xml" -exec sed -i 's/#6680cbc4/#80000000/gI' {} \; 2>/dev/null || true
+            sleep 0.1
+          done) &
+          PATCH_PID=$!
+          set -e
+          flutter build apk --release
+          STATUS=$?
+          kill $PATCH_PID || true
+          exit $STATUS
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
           name: sportflix-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-
-      - name: Upload debug artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sportflix-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error

@@ -5,6 +5,21 @@
         android:usesCleartextTraffic="true"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- Start.io (StartApp) — App ID from portal.start.io → My Apps. -->
+        <meta-data
+            android:name="com.startapp.sdk.APPLICATION_ID"
+            android:value="207412796" />
+
+        <!-- Disable Start.io User Consent popup (GDPR) — consent accepted by default -->
+        <meta-data
+            android:name="com.startapp.sdk.DO_NOT_SHOW_USER_CONSENT"
+            android:value="true" />
+
+        <!-- Disable Return Ads (shown when returning to the app). -->
+        <meta-data
+            android:name="com.startapp.sdk.RETURN_ADS_ENABLED"
+            android:value="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -27,6 +42,15 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Disable Start.io Splash Ads (enabled by default). -->
+        <provider
+            android:authorities="com.startapp.flutter.sdk.${applicationId}"
+            android:name="com.startapp.flutter.sdk.StartAppFlutterHelper"
+            android:exported="false">
+            <meta-data
+                android:name="com.startapp.sdk.SPLASH_ADS_ENABLED"
+                android:value="false" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
