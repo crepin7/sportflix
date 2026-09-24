@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'home_screen.dart';
-import 'tigoals_screen.dart';
+import 'live_screen.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({super.key});
@@ -11,7 +11,7 @@ class RootScreen extends StatefulWidget {
 
 class _RootScreenState extends State<RootScreen> {
   int _idx = 0;
-  final _pages = const [HomeScreen(), TigoalsScreen()];
+  final _pages = const [HomeScreen(), LiveScreen()];
 
   @override
   Widget build(BuildContext context) {

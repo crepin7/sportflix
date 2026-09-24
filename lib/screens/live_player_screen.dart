@@ -7,14 +7,14 @@ import '../services/player_service.dart';
 import '../services/ads_service.dart';
 import '../theme.dart';
 
-class TigoalsPlayerScreen extends StatefulWidget {
+class LivePlayerScreen extends StatefulWidget {
   final LiveMatch match;
-  const TigoalsPlayerScreen({super.key, required this.match});
+  const LivePlayerScreen({super.key, required this.match});
   @override
-  State<TigoalsPlayerScreen> createState() => _TigoalsPlayerScreenState();
+  State<LivePlayerScreen> createState() => _LivePlayerScreenState();
 }
 
-class _TigoalsPlayerScreenState extends State<TigoalsPlayerScreen> with WidgetsBindingObserver {
+class _LivePlayerScreenState extends State<LivePlayerScreen> with WidgetsBindingObserver {
   final _playerService = PlayerService.instance;
   bool _loading = true;
   String? _error;

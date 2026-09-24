@@ -37,8 +37,10 @@ class LiveSportsService {
   static final LiveSportsService instance = LiveSportsService._();
   LiveSportsService._();
 
-  // Grands championnats TheSportsDB (key 3 = test, pas besoin de clé perso)
-  // IDs vérifiés: 4328=PL, 4335=LaLiga, 4332=SerieA, 4331=Bundesliga, 4334=Ligue1, 4480=CL, 4481=Europa
+  // Scores et calendriers via TheSportsDB (clé test 3).
+  // IMPORTANT : on ne possède pas le HLS de chaque match : le flux ouvert
+  // est un flux sportif générique stable (beIN XTRA / chaînes libres).
+  // Le nom du match affiché n'est PAS le contenu garanti du flux.
   static const _leagues = {
     '4328': 'Premier League',
     '4335': 'La Liga',
@@ -49,7 +51,7 @@ class LiveSportsService {
     '4481': 'Europa League',
   };
 
-  // Mapping ligue -> HLS stable déjà vérifié 200 (151.80 / 99.27 / amagi)
+  // Mapping ligue -> flux générique stable (pas le match lui-même)
   static const _hlsForLeague = {
     '4328': 'https://bein-xtra-bein.amagi.tv/playlist.m3u8',
     '4335': 'https://bein-xtra-bein.amagi.tv/playlist.m3u8',
@@ -113,7 +115,7 @@ class LiveSportsService {
             status: 'LIVE',
             homeScore: m['intHomeScore']?.toString() ?? '',
             awayScore: m['intAwayScore']?.toString() ?? '',
-            hlsUrl: _hlsForLeague['4335']!,
+            hlsUrl: _hlsForLeague['4328']!,
           ));
         }
       }

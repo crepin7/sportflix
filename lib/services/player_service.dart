@@ -59,8 +59,8 @@ class PlayerService {
       await _player.open(media);
       try { await _player.setSubtitleTrack(SubtitleTrack.no()); } catch (_) {}
     } catch (e, st) {
-      debugPrint('[animflix] open() threw: $e');
-      debugPrint('[animflix] stack: $st');
+      debugPrint('[sportflix] open() threw: $e');
+      debugPrint('[sportflix] stack: $st');
       rethrow;
     }
   }

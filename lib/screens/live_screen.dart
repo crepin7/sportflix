@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import '../services/live_sports_service.dart';
 import '../theme.dart';
-import 'tigoals_player_screen.dart';
+import 'live_player_screen.dart';
 
-class TigoalsScreen extends StatefulWidget {
-  const TigoalsScreen({super.key});
+class LiveScreen extends StatefulWidget {
+  const LiveScreen({super.key});
   @override
-  State<TigoalsScreen> createState() => _TigoalsScreenState();
+  State<LiveScreen> createState() => _LiveScreenState();
 }
 
-class _TigoalsScreenState extends State<TigoalsScreen> {
+class _LiveScreenState extends State<LiveScreen> {
   final _service = LiveSportsService.instance;
   List<LiveMatch> _all = [];
   bool _loading = true;
@@ -61,7 +61,7 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
           const Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('En direct', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              Text('Grands championnats', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+              Text('Scores • flux générique', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ]),
           ),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh, color: AppTheme.textSecondary)),
@@ -91,7 +91,7 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
     final isLive = m.status.toLowerCase().contains('live') || m.status == '1H' || m.status == '2H';
     final score = (m.homeScore.isNotEmpty || m.awayScore.isNotEmpty) ? '${m.homeScore} - ${m.awayScore}' : 'vs';
     return InkWell(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TigoalsPlayerScreen(match: m))),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))),
       borderRadius: BorderRadius.circular(14),
       child: Container(
         decoration: BoxDecoration(
@@ -124,7 +124,7 @@ class _TigoalsScreenState extends State<TigoalsScreen> {
               Expanded(child: _team(m.away, m.awayBadge, false)),
             ]),
             const SizedBox(height: 10),
-            SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TigoalsPlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isLive ? 'Regarder' : 'Voir le match'), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
+            SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isLive ? 'Regarder (flux générique)' : 'Flux générique'), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
           ],
         ),
       ),
