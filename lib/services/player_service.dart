@@ -45,14 +45,20 @@ class PlayerService {
     _currentChannel = channel;
 
     final headers = _buildHeaders(channel);
-    final String streamUrl = await _resolveVariant(channel.streamUrl, headers);
+    await playCustom(channel.streamUrl, headers, label: channel.name);
+  }
+
+  /// Lecture d'une URL arbitraire (ex: vrai flux live M3U) avec ses headers.
+  Future<void> playCustom(String url, Map<String, String> headers,
+      {String label = 'live'}) async {
+    final String streamUrl = await _resolveVariant(url, headers);
     final media = Media(
       streamUrl,
       httpHeaders: headers,
     );
 
-    debugPrint('[sportflix] play: ${channel.name}');
-    debugPrint('[sportflix] url: $streamUrl (orig ${channel.streamUrl})');
+    debugPrint('[sportflix] play: $label');
+    debugPrint('[sportflix] url: $streamUrl (orig $url)');
     debugPrint('[sportflix] headers: $headers');
 
     try {
@@ -101,6 +107,10 @@ class PlayerService {
     final ua = channel.userAgent ??
         'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36';
     final h = <String, String>{'User-Agent': ua};
+    if (channel.referer != null && channel.referer!.isNotEmpty) {
+      h['Referer'] = channel.referer!;
+      h['Origin'] = Uri.tryParse(channel.referer!)?.origin ?? channel.referer!;
+    }
 
     final host = _hostOf(channel.streamUrl);
     final url = channel.streamUrl;

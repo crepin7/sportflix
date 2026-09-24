@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'm3u_live_service.dart';
+
+export 'm3u_live_service.dart' show RealStream;
 
 class LiveMatch {
   final String id;
@@ -15,6 +18,9 @@ class LiveMatch {
   final String homeScore;
   final String awayScore;
   final String hlsUrl;
+  /// Vrais flux du match (sources live M3U). Vide = horaire seul,
+  /// le flux ouvert est alors le générique de repli [hlsUrl].
+  final List<RealStream> streams;
 
   LiveMatch({
     required this.id,
@@ -30,7 +36,27 @@ class LiveMatch {
     required this.homeScore,
     required this.awayScore,
     required this.hlsUrl,
-  });
+    List<RealStream>? streams,
+  }) : streams = streams ?? const [];
+
+  bool get hasRealStream => streams.isNotEmpty;
+
+  LiveMatch withRealStreams(List<RealStream> s) => LiveMatch(
+        id: id,
+        league: league,
+        home: home,
+        away: away,
+        homeBadge: homeBadge,
+        awayBadge: awayBadge,
+        leagueBadge: leagueBadge,
+        dateStr: dateStr,
+        timeStr: timeStr,
+        status: 'RÉEL',
+        homeScore: homeScore,
+        awayScore: awayScore,
+        hlsUrl: s.first.url,
+        streams: s,
+      );
 }
 
 class LiveSportsService {
@@ -38,9 +64,10 @@ class LiveSportsService {
   LiveSportsService._();
 
   // Scores et calendriers via TheSportsDB (clé test 3).
-  // IMPORTANT : on ne possède pas le HLS de chaque match : le flux ouvert
-  // est un flux sportif générique stable (beIN XTRA / chaînes libres).
-  // Le nom du match affiché n'est PAS le contenu garanti du flux.
+  // Les VRAIS flux viennent des playlists live M3U (doms9/iptv, actualisées
+  // toutes les heures) : chaque event porte le nom des équipes + son HLS.
+  // S'il n'y a pas de flux réel pour un match, [hlsUrl] générique sert
+  // de repli et l'UI l'indique ("flux générique").
   static const _leagues = {
     '4328': 'Premier League',
     '4335': 'La Liga',
@@ -62,7 +89,7 @@ class LiveSportsService {
     '4481': 'http://151.80.18.177:86/TMC/index.m3u8',
   };
 
-  Future<List<LiveMatch>> fetchAll() async {
+  Future<List<LiveMatch>> fetchAll({bool forceRefresh = false}) async {
     final all = <LiveMatch>[];
     for (final entry in _leagues.entries) {
       try {
@@ -119,6 +146,60 @@ class LiveSportsService {
           ));
         }
       }
+    } catch (_) {}
+    // 2) Vrais flux live M3U : on les rattache aux matchs connus,
+    //    et on ajoute les matchs non couverts par TheSportsDB.
+    try {
+      final live = await M3uLiveService.instance
+          .fetchLiveEvents(forceRefresh: forceRefresh);
+      final used = <M3uLiveEvent>{};
+      for (var i = 0; i < all.length; i++) {
+        M3uLiveEvent? best;
+        var bestScore = 3; // seuil : les deux équipes reconnues
+        for (final e in live) {
+          if (used.contains(e)) continue;
+          final s = M3uLiveService.matchScore(all[i].home, all[i].away, e);
+          if (s > bestScore) {
+            bestScore = s;
+            best = e;
+          }
+        }
+        if (best != null) {
+          used.add(best);
+          all[i] = all[i].withRealStreams(best.streams);
+        }
+      }
+      // Events M3U sans équivalent TheSportsDB -> nouvelles cartes.
+      for (final e in live) {
+        if (used.contains(e)) continue;
+        all.insert(
+          0,
+          LiveMatch(
+            id: 'm3u-${e.teamA.hashCode}-${e.teamB.hashCode}',
+            league: e.competition.isNotEmpty
+                ? '${e.competition} • RÉEL'
+                : 'En direct • RÉEL',
+            home: e.teamA,
+            away: e.teamB,
+            homeBadge: e.logo,
+            awayBadge: '',
+            leagueBadge: e.logo,
+            dateStr: "Aujourd'hui",
+            timeStr: '',
+            status: 'RÉEL',
+            homeScore: '',
+            awayScore: '',
+            hlsUrl: e.streams.first.url,
+            streams: e.streams,
+          ),
+        );
+      }
+      // Les vrais matchs d'abord.
+      all.sort((a, b) {
+        final r = (b.hasRealStream ? 1 : 0) - (a.hasRealStream ? 1 : 0);
+        if (r != 0) return r;
+        return 0;
+      });
     } catch (_) {}
     return all;
   }

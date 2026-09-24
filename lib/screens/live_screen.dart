@@ -21,10 +21,10 @@ class _LiveScreenState extends State<LiveScreen> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool force = false}) async {
     setState(() { _loading = true; _error = null; });
     try {
-      final list = await _service.fetchAll();
+      final list = await _service.fetchAll(forceRefresh: force);
       setState(() { _all = list; _loading = false; });
     } catch (e) {
       setState(() { _error = e.toString(); _loading = false; });
@@ -61,10 +61,10 @@ class _LiveScreenState extends State<LiveScreen> {
           const Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('En direct', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              Text('Scores • flux générique', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+              Text('Vrais matchs + scores', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ]),
           ),
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh, color: AppTheme.textSecondary)),
+          IconButton(onPressed: () => _load(force: true), icon: const Icon(Icons.refresh, color: AppTheme.textSecondary)),
         ],
       ),
     );
@@ -72,10 +72,10 @@ class _LiveScreenState extends State<LiveScreen> {
 
   Widget _body() {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
-    if (_error != null) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.error_outline, color: Colors.redAccent, size: 36), const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center), const SizedBox(height: 16), ElevatedButton(onPressed: _load, style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black), child: const Text('Réessayer'))])));
-    if (_all.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)), const SizedBox(height: 12), const Text('Aucun match à venir', style: TextStyle(color: AppTheme.textSecondary)), const SizedBox(height: 16), OutlinedButton(onPressed: _load, child: const Text('Actualiser'))]));
+    if (_error != null) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.error_outline, color: Colors.redAccent, size: 36), const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center), const SizedBox(height: 16), ElevatedButton(onPressed: () => _load(force: true), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black), child: const Text('Réessayer'))])));
+    if (_all.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)), const SizedBox(height: 12), const Text('Aucun match à venir', style: TextStyle(color: AppTheme.textSecondary)), const SizedBox(height: 16), OutlinedButton(onPressed: () => _load(force: true), child: const Text('Actualiser'))]));
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => _load(force: true),
       color: AppTheme.primary,
       backgroundColor: AppTheme.surface,
       child: ListView.separated(
@@ -88,7 +88,11 @@ class _LiveScreenState extends State<LiveScreen> {
   }
 
   Widget _matchCard(LiveMatch m) {
-    final isLive = m.status.toLowerCase().contains('live') || m.status == '1H' || m.status == '2H';
+    final isLive = m.status.toLowerCase().contains('live') ||
+        m.status == '1H' ||
+        m.status == '2H' ||
+        m.status == 'RÉEL';
+    final isReal = m.hasRealStream;
     final score = (m.homeScore.isNotEmpty || m.awayScore.isNotEmpty) ? '${m.homeScore} - ${m.awayScore}' : 'vs';
     return InkWell(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))),
@@ -97,7 +101,7 @@ class _LiveScreenState extends State<LiveScreen> {
         decoration: BoxDecoration(
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isLive ? AppTheme.primary.withValues(alpha: 0.6) : AppTheme.surfaceLight),
+          border: Border.all(color: isReal ? Colors.greenAccent.withValues(alpha: 0.7) : isLive ? AppTheme.primary.withValues(alpha: 0.6) : AppTheme.surfaceLight),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -109,7 +113,8 @@ class _LiveScreenState extends State<LiveScreen> {
                 Text(m.league, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
               ])),
               const Spacer(),
-              if (isLive) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), const Text('DIRECT', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
+              if (isReal) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.green[700], borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), Text(m.streams.length > 1 ? 'RÉEL • ${m.streams.length} sources' : 'RÉEL', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
+              if (!isReal && isLive) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), const Text('DIRECT', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
               const SizedBox(width: 6),
               Text('${m.dateStr} ${m.timeStr}'.trim(), style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ]),
@@ -119,12 +124,12 @@ class _LiveScreenState extends State<LiveScreen> {
               Column(children: [
                 Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(8)), child: Text(score, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))),
                 const SizedBox(height: 4),
-                Text(isLive ? 'En cours' : 'À venir', style: TextStyle(color: isLive ? AppTheme.primary : Colors.white24, fontSize: 10)),
+                Text(isReal ? 'Match réel' : isLive ? 'En cours' : 'À venir', style: TextStyle(color: isReal ? Colors.greenAccent : isLive ? AppTheme.primary : Colors.white24, fontSize: 10)),
               ]),
               Expanded(child: _team(m.away, m.awayBadge, false)),
             ]),
             const SizedBox(height: 10),
-            SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isLive ? 'Regarder (flux générique)' : 'Flux générique'), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
+            SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isReal ? 'Regarder le match' : 'Flux générique'), style: ElevatedButton.styleFrom(backgroundColor: isReal ? Colors.green[600] : AppTheme.primary, foregroundColor: isReal ? Colors.white : Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
           ],
         ),
       ),

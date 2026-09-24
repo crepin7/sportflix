@@ -19,6 +19,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> with WidgetsBinding
   bool _loading = true;
   String? _error;
   bool _playing = false;
+  int _streamIdx = 0;
 
   @override
   void initState() {
@@ -39,12 +40,31 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> with WidgetsBinding
   Future<void> _play() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final headers = {'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36'};
-      await _playerService.player.open(Media(widget.match.hlsUrl, httpHeaders: headers));
+      final streams = widget.match.streams;
+      if (streams.isNotEmpty) {
+        final s = streams[_streamIdx.clamp(0, streams.length - 1)];
+        await _playerService.playCustom(
+          s.url,
+          s.headers,
+          label: '${widget.match.home} vs ${widget.match.away} [${s.label}]',
+        );
+      } else {
+        await _playerService.playCustom(
+          widget.match.hlsUrl,
+          const {'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36'},
+          label: '${widget.match.home} vs ${widget.match.away} [générique]',
+        );
+      }
       try { await _playerService.player.setSubtitleTrack(SubtitleTrack.no()); } catch (_) {}
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
+  }
+
+  void _switchStream(int i) {
+    if (i == _streamIdx) return;
+    setState(() => _streamIdx = i);
+    _play();
   }
 
   @override
@@ -83,12 +103,60 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> with WidgetsBinding
                 const SizedBox(width: 8),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('${widget.match.home} vs ${widget.match.away}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text(widget.match.league, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                  Text(
+                    widget.match.streams.isNotEmpty
+                        ? '${widget.match.league} • ${widget.match.streams[_streamIdx.clamp(0, widget.match.streams.length - 1)].label}'
+                        : '${widget.match.league} • flux générique',
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
                 ])),
                 if (!_loading && _error == null) IconButton(icon: Icon(_playing ? Icons.pause_circle_filled : Icons.play_circle_filled, color: AppTheme.primary, size: 36), onPressed: () => _playing ? _playerService.pause() : _playerService.resume()),
               ]),
             ),
           ),
+          // Sélecteur de source quand plusieurs flux réels (ex: beIN Ñ,
+          // FAWA, STRMCNTR). Chaque source = commentateur/qualité différent.
+          if (widget.match.streams.length > 1 && !_loading && _error == null)
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: Container(
+                padding: EdgeInsets.only(
+                  top: 12, left: 12, right: 12,
+                  bottom: MediaQuery.of(context).padding.bottom + 12,
+                ),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                    colors: [Colors.black87, Colors.transparent],
+                  ),
+                ),
+                child: SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.match.streams.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (c, i) {
+                      final selected = i == _streamIdx;
+                      return ChoiceChip(
+                        label: Text(
+                          widget.match.streams[i].label,
+                          style: TextStyle(
+                            color: selected ? Colors.black : Colors.white,
+                            fontSize: 12,
+                            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        selected: selected,
+                        selectedColor: AppTheme.primary,
+                        backgroundColor: AppTheme.surfaceLight,
+                        onSelected: (_) => _switchStream(i),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
         ]),
       ),
     );

@@ -117,6 +117,36 @@ class ChannelService {
       logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/BeIN_Sports_logo_%28vertical_version%29.svg/500px-BeIN_Sports_logo_%28vertical_version%29.svg.png',
       category: 'Généraliste',
     ),
+    // Chaînes sport arabes FTA (commentaires arabes, diffusent les grands
+    // matchs). Sources libres iptv-org, stables.
+    const Channel(
+      id: 'alkass_three',
+      name: 'Alkass Three',
+      streamUrl: 'https://streamer2.qna.org.qa/148161470_live/148161470_296.sdp/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/d57BdFh.png',
+      category: 'Arabe',
+    ),
+    const Channel(
+      id: 'arryadia',
+      name: 'Arryadia (Maroc)',
+      streamUrl: 'http://149.100.11.252:8000/play/a065/index.m3u8',
+      logoUrl: 'https://i.imgur.com/XjzK3gZ.png',
+      category: 'Arabe',
+    ),
+    const Channel(
+      id: 'aliraqia_sport',
+      name: 'Al Iraqia Sport',
+      streamUrl: 'https://imn-live.esite-lab.com/hls/iraqia-sports-1.m3u8',
+      logoUrl: 'https://i.imgur.com/DrrlxTO.png',
+      category: 'Arabe',
+    ),
+    const Channel(
+      id: 'bahrain_sport_1',
+      name: 'Bahrain Sports 1',
+      streamUrl: 'https://5c7b683162943.streamlock.net/live/ngrp:sportsone_all/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/fBpLsbC.png',
+      category: 'Arabe',
+    ),
   ];
 
   List<Channel> get channels => List.unmodifiable(_channels);

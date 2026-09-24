@@ -5,6 +5,7 @@ class Channel {
   final String logoUrl;
   final String category;
   final String? userAgent;
+  final String? referer;
 
   const Channel({
     required this.id,
@@ -13,5 +14,6 @@ class Channel {
     required this.logoUrl,
     required this.category,
     this.userAgent,
+    this.referer,
   });
 }
