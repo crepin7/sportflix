@@ -6,6 +6,10 @@ class Channel {
   final String category;
   final String? userAgent;
   final String? referer;
+  /// Identifiant guide TV (XMLTV). Ex: "Alkass_3_AR.bein".
+  final String? epgId;
+  /// Fichier EPG : "bein" ou "fr".
+  final String? epgSource;
 
   const Channel({
     required this.id,
@@ -15,5 +19,7 @@ class Channel {
     required this.category,
     this.userAgent,
     this.referer,
+    this.epgId,
+    this.epgSource,
   });
 }

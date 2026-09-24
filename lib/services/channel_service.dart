@@ -11,6 +11,8 @@ class ChannelService {
       streamUrl: 'https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/lequipe/la-chaine-l-equipe-en-direct-dm.m3u8',
       logoUrl: 'https://static-cdn.tv.sfr.net/data/logos/tv_services/L_Equipe_color.png?h=100',
       category: 'Généraliste',
+      epgId: "L'Equipe.fr",
+      epgSource: 'fr',
     ),
     const Channel(
       id: 'lequipe_foot',
@@ -25,6 +27,8 @@ class ChannelService {
       streamUrl: 'https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/lequipe/eurosport-1-dm.m3u8',
       logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Eurosport_Logo_%282011-2015%29.svg/960px-Eurosport_Logo_%282011-2015%29.svg.png',
       category: 'Généraliste',
+      epgId: 'Eurosport.1.fr',
+      epgSource: 'fr',
     ),
     const Channel(
       id: 'eurosport_2',
@@ -32,6 +36,8 @@ class ChannelService {
       streamUrl: 'https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/lequipe/eurosport-2-dm.m3u8',
       logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Eurosport_Logo_%282011-2015%29.svg/960px-Eurosport_Logo_%282011-2015%29.svg.png',
       category: 'Généraliste',
+      epgId: 'Eurosport.2.fr',
+      epgSource: 'fr',
     ),
     const Channel(
       id: 'tennis_channel',
@@ -53,6 +59,8 @@ class ChannelService {
       streamUrl: 'https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/misc/sport-en-france-dm.m3u8',
       logoUrl: 'https://s1.dmcdn.net/u/8Dz9c1exwxFnyVPBm/60x60',
       category: 'Généraliste',
+      epgId: 'Sport.en.France.fr',
+      epgSource: 'fr',
     ),
     const Channel(
       id: 'equidia',
@@ -60,6 +68,8 @@ class ChannelService {
       streamUrl: 'https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/equidia/live2.m3u8',
       logoUrl: 'https://i.imgur.com/QPpbRcZ.png',
       category: 'Equitation',
+      epgId: 'Equidia.fr',
+      epgSource: 'fr',
     ),
     const Channel(
       id: 'foot_plus',
@@ -74,6 +84,8 @@ class ChannelService {
       streamUrl: 'https://futbol9865.ultratv13.workers.dev/deportivo111/14.m3u8',
       logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/64/Canal%2BSport_360.png',
       category: 'Généraliste',
+      epgId: 'Canal+.Sport.360.fr',
+      epgSource: 'fr',
     ),
     const Channel(
       id: 'rmc_sport_1',
@@ -81,6 +93,8 @@ class ChannelService {
       streamUrl: 'https://7nyaler.streamhostingcdn.top/stream/59/index.m3u8',
       logoUrl: 'https://i.imgur.com/NsFTG7u.png',
       category: 'Généraliste',
+      epgId: 'RMC.Sport.1.fr',
+      epgSource: 'fr',
     ),
     const Channel(
       id: 'kozoom_tv',

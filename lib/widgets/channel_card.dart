@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/channel.dart';
+import '../services/epg_service.dart';
 import '../theme.dart';
 
 class ChannelCard extends StatelessWidget {
   final Channel channel;
   final VoidCallback onTap;
+  final EpgProgram? nowPlaying;
+  final EpgProgram? upNext;
 
   const ChannelCard({
     super.key,
     required this.channel,
     required this.onTap,
+    this.nowPlaying,
+    this.upNext,
   });
 
   @override
@@ -52,7 +58,7 @@ class ChannelCard extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Column(
@@ -66,7 +72,7 @@ class ChannelCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
@@ -88,6 +94,42 @@ class ChannelCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (nowPlaying != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: nowPlaying!.looksLikeMatch
+                                  ? Colors.greenAccent
+                                  : AppTheme.textSecondary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              '${DateFormat.Hm().format(nowPlaying!.start)} ${nowPlaying!.title}',
+                              style: TextStyle(
+                                color: nowPlaying!.looksLikeMatch
+                                    ? Colors.greenAccent
+                                    : AppTheme.textSecondary,
+                                fontSize: 9,
+                                fontWeight: nowPlaying!.looksLikeMatch
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

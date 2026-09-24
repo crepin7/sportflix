@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/channel.dart';
 import '../services/channel_service.dart';
 import '../services/ads_service.dart';
+import '../services/epg_service.dart';
 import '../widgets/channel_card.dart';
 import '../theme.dart';
 import 'player_screen.dart';
@@ -18,6 +19,31 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedCategory;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  // channelId -> (en cours, suivant)
+  Map<String, (EpgProgram?, EpgProgram?)> _epg = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEpg();
+  }
+
+  /// Guide TV en arrière-plan : n'affiche rien si indisponible.
+  Future<void> _loadEpg() async {
+    try {
+      final wanted = _channelService.channels
+          .where((c) => c.epgId != null && c.epgSource != null)
+          .map((c) => (c.epgSource!, c.epgId!))
+          .toSet();
+      await EpgService.instance.load(wanted);
+      if (!mounted) return;
+      final map = <String, (EpgProgram?, EpgProgram?)>{};
+      for (final c in _channelService.channels) {
+        if (c.epgId != null) map[c.id] = EpgService.instance.programsFor(c.epgId!);
+      }
+      setState(() => _epg = map);
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -179,8 +205,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemCount: _filteredChannels.length,
                       itemBuilder: (context, index) {
                         final channel = _filteredChannels[index];
+                        final epg = _epg[channel.id];
                         return ChannelCard(
                           channel: channel,
+                          nowPlaying: epg?.$1,
+                          upNext: epg?.$2,
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
