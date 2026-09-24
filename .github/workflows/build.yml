@@ -65,3 +65,5 @@ jobs:
           name: sportflix-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
+          # Quota org limité : garde 7 jours pour ne plus saturer le stockage
+          retention-days: 7
