@@ -64,8 +64,10 @@ jobs:
       - name: Deploy preview sur Vercel (CLI 58.4.0, version validée)
         id: vercel
         if: steps.secrets.outputs.missing == 'false'
+        # --prod : URL stable (sportflix-gamma.vercel.app) au lieu d'une
+        # URL unique par déploiement.
         run: |
-          URL=$(npx -y vercel@58.4.0 deploy --token=${{ secrets.VERCEL_TOKEN }} --yes | tail -n 1)
+          URL=$(npx -y vercel@58.4.0 deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes | tail -n 1)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Preview: $URL"
         working-directory: ./build/web
