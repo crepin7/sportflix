@@ -21,6 +21,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   String? _errorMessage;
   bool _showControls = true;
   bool _isPlaying = false;
+  List<StreamVariant> _variants = const [];
+  StreamVariant? _chosenVariant;
+  String _qualityLabel = 'Auto ≤720p';
 
   @override
   void initState() {
@@ -98,14 +101,122 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
 
     try {
       await _playerService.play(widget.channel);
+      _loadVariants();
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Impossible de lire le flux: $e';
+          _errorMessage = _friendlyError(e);
           _isLoading = false;
         });
       }
     }
+  }
+
+  /// Qualités dispo chargées en arrière-plan (ne bloque pas la lecture).
+  Future<void> _loadVariants() async {
+    try {
+      final headers =
+          _playerService.headersFor(widget.channel);
+      final variants = await _playerService.fetchVariants(
+          widget.channel.streamUrl, headers);
+      if (!mounted || variants.length <= 1) return;
+      setState(() {
+        _variants = variants;
+        _qualityLabel = _chosenVariant?.label ?? 'Auto ≤720p';
+      });
+    } catch (_) {}
+  }
+
+  /// Bascule manuelle de qualité (ex: forcer 480p sur petite connexion).
+  Future<void> _switchQuality(StreamVariant? v) async {
+    setState(() {
+      _chosenVariant = v;
+      _qualityLabel = v?.label ?? 'Auto ≤720p';
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      await _playerService.play(widget.channel, overrideUrl: v?.url);
+      _isLoading = false;
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = _friendlyError(e);
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showQualitySheet() {
+    if (_variants.isEmpty) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Qualité vidéo',
+                  style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
+            ),
+            _qualityTile(null, 'Auto ≤720p', 'Recommandé'),
+            for (final v in _variants)
+              _qualityTile(v, v.label, _chosenVariant == v ? 'Actif' : null),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _qualityTile(StreamVariant? v, String label, String? badge) {
+    final selected =
+        (_chosenVariant == null && v == null) || _chosenVariant == v;
+    return ListTile(
+      leading: Icon(
+        selected ? Icons.radio_button_checked : Icons.radio_button_off,
+        color: selected ? AppTheme.primary : AppTheme.textSecondary,
+      ),
+      title: Text(label, style: const TextStyle(color: AppTheme.textPrimary)),
+      trailing: badge == null
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(badge,
+                  style: const TextStyle(
+                      color: AppTheme.primary, fontSize: 11)),
+            ),
+      onTap: () {
+        Navigator.pop(context);
+        if (!selected) _switchQuality(v);
+      },
+    );
+  }
+
+  String _friendlyError(Object e) {
+    final s = e.toString();
+    if (s.contains('Playlist HTTP 403') || s.contains('Playlist HTTP 404')) {
+      final code = s.contains('403') ? '403' : '404';
+      return 'Flux hors ligne pour le moment (erreur $code).\nLa source met à jour ses liens toutes les heures — réessaie plus tard ou teste une autre chaîne.';
+    }
+    if (s.contains('TimeoutException') || s.contains('timed out')) {
+      return 'Connexion trop lente (timeout).\nBascule en 480p via le bouton qualité si la lecture reprend.';
+    }
+    return 'Impossible de lire le flux: $e';
   }
 
   @override
@@ -290,6 +401,15 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        if (_variants.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: _showQualitySheet,
+                            icon: const Icon(Icons.hd,
+                                color: Colors.white70, size: 20),
+                            label: Text(_qualityLabel,
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 12)),
+                          ),
                         IconButton(
                           icon: Icon(
                             _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
@@ -304,6 +424,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                             }
                           },
                         ),
+                        if (_variants.isNotEmpty)
+                          const SizedBox(width: 48),
                       ],
                     ),
                   ),
