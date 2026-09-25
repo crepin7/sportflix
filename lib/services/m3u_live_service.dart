@@ -80,8 +80,7 @@ class M3uLiveService {
   /// du flux (Referer/UA) sinon 403 assuré. Timeout court.
   Future<bool> probeStream(RealStream s) async {
     final cached = _probeCache[s.url];
-    if (cached != null &&
-        DateTime.now().difference(cached.$2) < _ttl) {
+    if (cached != null && DateTime.now().difference(cached.$2) < _ttl) {
       return cached.$1;
     }
     var alive = false;
@@ -104,11 +103,34 @@ class M3uLiveService {
     final t = title.toLowerCase();
     if (!t.contains(' vs ') && !t.contains(' vs. ')) return false;
     const denylist = [
-      'afl', 'aussie rules', 'baseball', 'american football', 'nfl',
-      'mlb', 'atp', 'wta', 'tennis', 'basketball', 'wnbl', 'nba',
-      'volleyball', 'handball', 'cricket', 'rugby', 'hockey', 'golf',
-      'darts', 'snooker', 'boxing', 'mma', 'ufc', 'motogp', 'f1 ',
-      'formula 1', 'cycling', 'esports',
+      'afl',
+      'aussie rules',
+      'baseball',
+      'american football',
+      'nfl',
+      'mlb',
+      'atp',
+      'wta',
+      'tennis',
+      'basketball',
+      'wnbl',
+      'nba',
+      'volleyball',
+      'handball',
+      'cricket',
+      'rugby',
+      'hockey',
+      'golf',
+      'darts',
+      'snooker',
+      'boxing',
+      'mma',
+      'ufc',
+      'motogp',
+      'f1 ',
+      'formula 1',
+      'cycling',
+      'esports',
     ];
     for (final b in denylist) {
       if (t.contains(b)) return false;
@@ -126,8 +148,7 @@ class M3uLiveService {
     }
     String? body;
     // Navigateurs : User-Agent interdit (forbidden header) -> sans headers.
-    final headers =
-        kIsWeb ? <String, String>{} : {'User-Agent': _defaultUa};
+    final headers = kIsWeb ? <String, String>{} : {'User-Agent': _defaultUa};
     for (final url in _playlistUrls) {
       try {
         final r = await http
@@ -176,8 +197,7 @@ class M3uLiveService {
         if (!_isFootball(title)) continue;
         final parsed = _parseTitle(title);
         if (parsed == null) continue;
-        final key =
-            '${_norm(parsed.$2)} vs ${_norm(parsed.$3)}';
+        final key = '${_norm(parsed.$2)} vs ${_norm(parsed.$3)}';
         final stream = RealStream(
           url: line,
           label: parsed.$4.isNotEmpty ? parsed.$4 : 'Flux direct',
@@ -223,9 +243,8 @@ class M3uLiveService {
     // doublons (même match, plusieurs sources) et nettoyer l'affichage.
     // Limité aux parenthèses courtes de fin (vrais noms d'équipes préservés).
     rest = rest.replaceAll(RegExp(r'\s*\([^()]{1,24}\)\s*$'), '');
-    final vsMatch =
-        RegExp(r'^(.*?)\s+vs\.?\s+(.*?)$', caseSensitive: false)
-            .firstMatch(rest);
+    final vsMatch = RegExp(r'^(.*?)\s+vs\.?\s+(.*?)$', caseSensitive: false)
+        .firstMatch(rest);
     if (vsMatch == null) return null;
     var a = vsMatch.group(1)!.trim();
     var b = vsMatch.group(2)!.trim();
@@ -239,9 +258,22 @@ class M3uLiveService {
   static String _norm(String s) {
     var n = s.toLowerCase();
     const accents = {
-      'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'à': 'a', 'â': 'a',
-      'ä': 'a', 'î': 'i', 'ï': 'i', 'ô': 'o', 'ö': 'o', 'ù': 'u',
-      'û': 'u', 'ü': 'u', 'ç': 'c', 'ñ': 'n',
+      'é': 'e',
+      'è': 'e',
+      'ê': 'e',
+      'ë': 'e',
+      'à': 'a',
+      'â': 'a',
+      'ä': 'a',
+      'î': 'i',
+      'ï': 'i',
+      'ô': 'o',
+      'ö': 'o',
+      'ù': 'u',
+      'û': 'u',
+      'ü': 'u',
+      'ç': 'c',
+      'ñ': 'n',
     };
     accents.forEach((k, v) => n = n.replaceAll(k, v));
     n = n.replaceAll(RegExp(r'[^a-z0-9 ]'), ' ');
@@ -251,13 +283,9 @@ class M3uLiveService {
 
   /// Score de correspondance entre un match TheSportsDB et un event M3U.
   /// Retourne le nombre de mots significatifs (>3 lettres) communs par équipe.
-  static int matchScore(
-      String home, String away, M3uLiveEvent e) {
+  static int matchScore(String home, String away, M3uLiveEvent e) {
     int scoreFor(String team, String side) {
-      final words = _norm(team)
-          .split(' ')
-          .where((w) => w.length > 3)
-          .toList();
+      final words = _norm(team).split(' ').where((w) => w.length > 3).toList();
       if (words.isEmpty) {
         // nom court (ex: PSG) : match exact
         return _norm(side).contains(_norm(team)) ? 1 : -10;

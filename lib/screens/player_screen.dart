@@ -15,7 +15,8 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver {
+class _PlayerScreenState extends State<PlayerScreen>
+    with WidgetsBindingObserver {
   final PlayerService _playerService = PlayerService.instance;
   bool _isLoading = true;
   String? _errorMessage;
@@ -75,7 +76,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           // Only show error if video is NOT playing (real failure)
           if (!_isPlaying) {
             Future.delayed(const Duration(seconds: 3), () {
-              if (mounted && _playerService.currentChannel != null && !_isPlaying) {
+              if (mounted &&
+                  _playerService.currentChannel != null &&
+                  !_isPlaying) {
                 _playChannel();
               }
             });
@@ -115,10 +118,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   /// Qualités dispo chargées en arrière-plan (ne bloque pas la lecture).
   Future<void> _loadVariants() async {
     try {
-      final headers =
-          _playerService.headersFor(widget.channel);
-      final variants = await _playerService.fetchVariants(
-          widget.channel.streamUrl, headers);
+      final headers = _playerService.headersFor(widget.channel);
+      final variants =
+          await _playerService.fetchVariants(widget.channel.streamUrl, headers);
       if (!mounted || variants.length <= 1) return;
       setState(() {
         _variants = variants;
@@ -197,8 +199,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(badge,
-                  style: const TextStyle(
-                      color: AppTheme.primary, fontSize: 11)),
+                  style:
+                      const TextStyle(color: AppTheme.primary, fontSize: 11)),
             ),
       onTap: () {
         Navigator.pop(context);
@@ -221,7 +223,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       _playerService.player.pause();
     }
   }
@@ -267,14 +270,12 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                   controller: _playerService.controller,
                 ),
               ),
-
               if (_isLoading)
                 const Center(
                   child: CircularProgressIndicator(
                     color: AppTheme.primary,
                   ),
                 ),
-
               if (_errorMessage != null)
                 Center(
                   child: Container(
@@ -314,7 +315,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                     ),
                   ),
                 ),
-
               if (_showControls)
                 Positioned(
                   top: 0,
@@ -375,7 +375,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                     ),
                   ),
                 ),
-
               if (_showControls && !_isLoading && _errorMessage == null)
                 Positioned(
                   bottom: 0,
@@ -412,7 +411,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                           ),
                         IconButton(
                           icon: Icon(
-                            _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                            _isPlaying
+                                ? Icons.pause_circle_filled
+                                : Icons.play_circle_filled,
                             color: AppTheme.primary,
                             size: 64,
                           ),
@@ -424,8 +425,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                             }
                           },
                         ),
-                        if (_variants.isNotEmpty)
-                          const SizedBox(width: 48),
+                        if (_variants.isNotEmpty) const SizedBox(width: 48),
                       ],
                     ),
                   ),

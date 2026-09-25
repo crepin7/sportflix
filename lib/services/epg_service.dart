@@ -148,8 +148,7 @@ class EpgService {
   }
 
   /// Parse événementiel (faible mémoire) : ne garde que les [wanted].
-  Map<String, List<EpgProgram>> _parseXmlTv(
-      String text, Set<String> wanted) {
+  Map<String, List<EpgProgram>> _parseXmlTv(String text, Set<String> wanted) {
     final out = <String, List<EpgProgram>>{};
     String? channel;
     String? start;
@@ -230,8 +229,7 @@ class EpgService {
         int.parse(m.group(5)!),
         int.parse(m.group(6)!),
       );
-      var offsetMinutes =
-          int.parse(m.group(8)!) * 60 + int.parse(m.group(9)!);
+      var offsetMinutes = int.parse(m.group(8)!) * 60 + int.parse(m.group(9)!);
       if (m.group(7) == '-') offsetMinutes = -offsetMinutes;
       return dt.subtract(Duration(minutes: offsetMinutes)).toLocal();
     } catch (_) {
@@ -239,8 +237,10 @@ class EpgService {
     }
   }
 
-  String _unescape(String s) =>
-      s.replaceAll('&amp;', '&').replaceAll('&apos;', "'").replaceAll('&quot;', '"');
+  String _unescape(String s) => s
+      .replaceAll('&amp;', '&')
+      .replaceAll('&apos;', "'")
+      .replaceAll('&quot;', '"');
 
   Future<void> _restoreCache() async {
     if (_programs.isNotEmpty) return;

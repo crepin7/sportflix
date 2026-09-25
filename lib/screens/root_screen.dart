@@ -20,7 +20,8 @@ class _RootScreenState extends State<RootScreen> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppTheme.surface,
-          border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+          border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
         ),
         child: BottomNavigationBar(
           currentIndex: _idx,
@@ -29,11 +30,13 @@ class _RootScreenState extends State<RootScreen> {
           selectedItemColor: AppTheme.primary,
           unselectedItemColor: AppTheme.textSecondary,
           type: BottomNavigationBarType.fixed,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+          selectedLabelStyle:
+              const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.tv), label: 'Chaînes'),
-            BottomNavigationBarItem(icon: Icon(Icons.live_tv), label: 'En direct'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.live_tv), label: 'En direct'),
           ],
         ),
       ),

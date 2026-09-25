@@ -6,8 +6,10 @@ class Channel {
   final String category;
   final String? userAgent;
   final String? referer;
+
   /// Identifiant guide TV (XMLTV). Ex: "Alkass_3_AR.bein".
   final String? epgId;
+
   /// Fichier EPG : "bein" ou "fr".
   final String? epgSource;
 

@@ -19,11 +19,14 @@ class LiveMatch {
   final String homeScore;
   final String awayScore;
   final String hlsUrl;
+
   /// Vrais flux du match (sources live M3U). Vide = horaire seul,
   /// le flux ouvert est alors le générique de repli [hlsUrl].
   final List<RealStream> streams;
+
   /// Priorité d'affichage de la compétition (0 = CL ... 50 = autres).
   final int leagueRank;
+
   /// État des vrais flux : 'unchecked' (pas encore testé), 'alive', 'dead'.
   final String streamState;
 
@@ -50,12 +53,10 @@ class LiveMatch {
   bool get hasRealStream => streams.isNotEmpty;
 
   /// Vrai flux vérifié jouable (sonde HTTP passée).
-  bool get isVerifiedLive =>
-      streams.isNotEmpty && streamState == 'alive';
+  bool get isVerifiedLive => streams.isNotEmpty && streamState == 'alive';
 
   /// Candidat à vérifier (sonde pas encore passée).
-  bool get isPendingCheck =>
-      streams.isNotEmpty && streamState == 'unchecked';
+  bool get isPendingCheck => streams.isNotEmpty && streamState == 'unchecked';
 
   bool get isLiveNow =>
       status == 'RÉEL' ||
@@ -76,19 +77,46 @@ class LiveMatch {
     bool hasAny(List<String> keys) => keys.any(l.contains);
     // 2e divisions et échelons jeunes : jamais au même rang que l'élite.
     if (hasAny([
-      'hyper motion', 'hypermotion', 'la liga 2', 'laliga 2', 'liga 2',
-      'segunda', 'serie b', 'serie c',
-      'bundesliga 2', '2. bundesliga', 'ligue 2', 'championship',
-      'league one', 'league two', 'premier league 2', ' u21', ' u20',
-      ' u19', ' youth', 'primavera', 'reserves', ' w ',
+      'hyper motion',
+      'hypermotion',
+      'la liga 2',
+      'laliga 2',
+      'liga 2',
+      'segunda',
+      'serie b',
+      'serie c',
+      'bundesliga 2',
+      '2. bundesliga',
+      'ligue 2',
+      'championship',
+      'league one',
+      'league two',
+      'premier league 2',
+      ' u21',
+      ' u20',
+      ' u19',
+      ' youth',
+      'primavera',
+      'reserves',
+      ' w ',
     ])) {
       return 12;
     }
     // Autres confédérations : pas la C1/C3 UEFA.
     final otherConfed = hasAny([
-      'cosafa', 'concacaf', 'libertadores', 'sudamericana', 'cecafa',
-      'wafu', 'asean', 'arab cup', 'afc champions', 'caf champions',
-      'caf confederation', 'ofc champions', 'afc cup',
+      'cosafa',
+      'concacaf',
+      'libertadores',
+      'sudamericana',
+      'cecafa',
+      'wafu',
+      'asean',
+      'arab cup',
+      'afc champions',
+      'caf champions',
+      'caf confederation',
+      'ofc champions',
+      'afc cup',
     ]);
     if (l.contains('champions league') &&
         !otherConfed &&
@@ -126,8 +154,7 @@ class LiveMatch {
     if (r != 0) return r;
     final l = a.leagueRank.compareTo(b.leagueRank);
     if (l != 0) return l;
-    final s =
-        (a.isLiveNow ? 0 : 1).compareTo(b.isLiveNow ? 0 : 1);
+    final s = (a.isLiveNow ? 0 : 1).compareTo(b.isLiveNow ? 0 : 1);
     if (s != 0) return s;
     final name = '${a.league}|${a.home}|${a.away}';
     final nameB = '${b.league}|${b.home}|${b.away}';
@@ -237,8 +264,11 @@ class LiveSportsService {
         final id = entry.key;
         final name = entry.value;
         // Next 5 events pour la ligue
-        final url = Uri.parse('https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=$id');
-        final r = await http.get(url, headers: LiveMatch._httpHeaders).timeout(const Duration(seconds: 8));
+        final url = Uri.parse(
+            'https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=$id');
+        final r = await http
+            .get(url, headers: LiveMatch._httpHeaders)
+            .timeout(const Duration(seconds: 8));
         if (r.statusCode != 200) continue;
         final j = jsonDecode(r.body);
         final List events = (j['events'] ?? []) as List;
@@ -257,34 +287,42 @@ class LiveSportsService {
             status: m['strStatus'] ?? 'Not Started',
             homeScore: m['intHomeScore']?.toString() ?? '',
             awayScore: m['intAwayScore']?.toString() ?? '',
-            hlsUrl: _hlsForLeague[id] ?? 'http://151.80.18.177:86/Canal+_sport_HD/index.m3u8',
+            hlsUrl: _hlsForLeague[id] ??
+                'http://151.80.18.177:86/Canal+_sport_HD/index.m3u8',
           ));
         }
       } catch (_) {}
     }
     // Aussi les lives du moment
     try {
-      final r = await http.get(Uri.parse('https://www.thesportsdb.com/api/v1/json/3/livescore.php?l=English_Premier_League'), headers: LiveMatch._httpHeaders).timeout(const Duration(seconds: 8));
+      final r = await http
+          .get(
+              Uri.parse(
+                  'https://www.thesportsdb.com/api/v1/json/3/livescore.php?l=English_Premier_League'),
+              headers: LiveMatch._httpHeaders)
+          .timeout(const Duration(seconds: 8));
       if (r.statusCode == 200) {
         final j = jsonDecode(r.body);
         final List events = (j['events'] ?? []) as List;
         for (final e in events.take(4)) {
           final m = e as Map<String, dynamic>;
-          all.insert(0, LiveMatch(
-            id: m['idEvent']?.toString() ?? '',
-            league: 'Premier League - LIVE',
-            home: m['strHomeTeam'] ?? '?',
-            away: m['strAwayTeam'] ?? '?',
-            homeBadge: m['strHomeTeamBadge'] ?? '',
-            awayBadge: m['strAwayTeamBadge'] ?? '',
-            leagueBadge: m['strLeagueBadge'] ?? '',
-            dateStr: m['dateEvent'] ?? '',
-            timeStr: m['strTime'] ?? '',
-            status: 'LIVE',
-            homeScore: m['intHomeScore']?.toString() ?? '',
-            awayScore: m['intAwayScore']?.toString() ?? '',
-            hlsUrl: _hlsForLeague['4328']!,
-          ));
+          all.insert(
+              0,
+              LiveMatch(
+                id: m['idEvent']?.toString() ?? '',
+                league: 'Premier League - LIVE',
+                home: m['strHomeTeam'] ?? '?',
+                away: m['strAwayTeam'] ?? '?',
+                homeBadge: m['strHomeTeamBadge'] ?? '',
+                awayBadge: m['strAwayTeamBadge'] ?? '',
+                leagueBadge: m['strLeagueBadge'] ?? '',
+                dateStr: m['dateEvent'] ?? '',
+                timeStr: m['strTime'] ?? '',
+                status: 'LIVE',
+                homeScore: m['intHomeScore']?.toString() ?? '',
+                awayScore: m['intAwayScore']?.toString() ?? '',
+                hlsUrl: _hlsForLeague['4328']!,
+              ));
         }
       }
     } catch (_) {}
@@ -319,9 +357,7 @@ class LiveSportsService {
           0,
           LiveMatch(
             id: 'm3u-${e.teamA.hashCode}-${e.teamB.hashCode}',
-            league: e.competition.isNotEmpty
-                ? e.competition
-                : 'En direct',
+            league: e.competition.isNotEmpty ? e.competition : 'En direct',
             home: e.teamA,
             away: e.teamB,
             homeBadge: '',
@@ -358,8 +394,8 @@ class LiveSportsService {
       final verified = await Future.wait(chunk.map((m) async {
         if (m.streams.isEmpty || m.streamState != 'unchecked') return m;
         final alive = <RealStream>[];
-        final results = await Future.wait(
-            m.streams.map((s) => m3u.probeStream(s)));
+        final results =
+            await Future.wait(m.streams.map((s) => m3u.probeStream(s)));
         for (var k = 0; k < m.streams.length; k++) {
           if (results[k]) alive.add(m.streams[k]);
         }

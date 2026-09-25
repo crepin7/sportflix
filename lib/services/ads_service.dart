@@ -84,7 +84,8 @@ class AdsService {
   }
 
   void _loadInterstitial() {
-    _sdk.loadInterstitialAd(
+    _sdk
+        .loadInterstitialAd(
       prefs: const StartAppAdPreferences(adTag: 'sportflix-exit-interstitial'),
       onAdDisplayed: () {
         status.value = 'ads: interstitial affichée';
@@ -108,7 +109,8 @@ class AdsService {
         _interstitialAd = null;
         _loadInterstitial();
       },
-    ).then((interstitialAd) {
+    )
+        .then((interstitialAd) {
       _interstitialAd = interstitialAd;
       status.value = 'ads: interstitial prête';
       debugPrint('[AdsService] Start.io interstitial loaded');
@@ -130,7 +132,8 @@ class AdsService {
     }
     _retryCount++;
     final delay = Duration(seconds: 2 * _retryCount);
-    debugPrint('[AdsService] retry interstitial attempt $_retryCount in $delay');
+    debugPrint(
+        '[AdsService] retry interstitial attempt $_retryCount in $delay');
     Future.delayed(delay, _loadInterstitial);
   }
 }

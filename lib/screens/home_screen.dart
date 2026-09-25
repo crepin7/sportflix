@@ -39,7 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       final map = <String, (EpgProgram?, EpgProgram?)>{};
       for (final c in _channelService.channels) {
-        if (c.epgId != null) map[c.id] = EpgService.instance.programsFor(c.epgId!);
+        if (c.epgId != null)
+          map[c.id] = EpgService.instance.programsFor(c.epgId!);
       }
       setState(() => _epg = map);
     } catch (_) {}
@@ -61,8 +62,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (_searchQuery.isNotEmpty) {
-      channels = _channelService.searchChannels(_searchQuery)
-          .where((c) => _selectedCategory == null || c.category == _selectedCategory)
+      channels = _channelService
+          .searchChannels(_searchQuery)
+          .where((c) =>
+              _selectedCategory == null || c.category == _selectedCategory)
           .toList();
     }
 
@@ -162,9 +165,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildCategoryChip(null, 'Toutes'),
                         const SizedBox(width: 8),
                         ...categories.map((cat) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: _buildCategoryChip(cat, cat),
-                        )),
+                              padding: const EdgeInsets.only(right: 8),
+                              child: _buildCategoryChip(cat, cat),
+                            )),
                       ],
                     ),
                   ),
@@ -181,13 +184,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           Icon(
                             Icons.search_off,
                             size: 64,
-                            color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                            color:
+                                AppTheme.textSecondary.withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Aucune chaîne trouvée',
                             style: TextStyle(
-                              color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                              color:
+                                  AppTheme.textSecondary.withValues(alpha: 0.7),
                               fontSize: 16,
                             ),
                           ),
@@ -196,7 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     )
                   : GridView.builder(
                       padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         childAspectRatio: 0.85,
                         crossAxisSpacing: 12,
@@ -213,7 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => PlayerScreen(channel: channel),
+                                builder: (context) =>
+                                    PlayerScreen(channel: channel),
                               ),
                             );
                           },

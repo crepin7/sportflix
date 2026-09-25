@@ -24,12 +24,18 @@ class _LiveScreenState extends State<LiveScreen> {
   }
 
   Future<void> _load({bool force = false}) async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       // Phase 1 : calendriers + candidats flux (rapide).
       final list = await _service.fetchAll(forceRefresh: force);
       if (!mounted) return;
-      setState(() { _all = list; _loading = false; });
+      setState(() {
+        _all = list;
+        _loading = false;
+      });
       // Phase 2 : vrais blasons (rapide grâce au cache, converge au fil
       // des ouvertures) avant la sonde réseau plus lente.
       await _enrichBadges(list);
@@ -37,10 +43,15 @@ class _LiveScreenState extends State<LiveScreen> {
       // Phase 3 : sonde des flux (retire les rencontres mortes).
       final verified = await _service.verifyRealStreams(_all);
       if (!mounted) return;
-      setState(() { _all = verified; });
+      setState(() {
+        _all = verified;
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
@@ -66,8 +77,7 @@ class _LiveScreenState extends State<LiveScreen> {
       // Applique d'abord ce que le cache connaît déjà.
       _applyCachedBadges();
       // Puis va chercher le reste en ligne, par vagues.
-      final found =
-          await TeamBadgeService.instance.enrich(missing);
+      final found = await TeamBadgeService.instance.enrich(missing);
       if (!mounted || found.isEmpty) return;
       _applyCachedBadges();
     } catch (_) {}
@@ -108,37 +118,77 @@ class _LiveScreenState extends State<LiveScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+                color: AppTheme.primary,
+                borderRadius: BorderRadius.circular(10)),
             child: const Icon(Icons.live_tv, color: Colors.black, size: 20),
           ),
           const SizedBox(width: 10),
           const Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('En direct', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-              Text('Vrais matchs + scores', style: TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('En direct',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
+              Text('Vrais matchs + scores',
+                  style:
+                      TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
             ]),
           ),
-          IconButton(onPressed: () => _load(force: true), icon: const Icon(Icons.refresh, color: AppTheme.textSecondary)),
+          IconButton(
+              onPressed: () => _load(force: true),
+              icon: const Icon(Icons.refresh, color: AppTheme.textSecondary)),
         ],
       ),
     );
   }
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
-    if (_error != null) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.error_outline, color: Colors.redAccent, size: 36), const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center), const SizedBox(height: 16), ElevatedButton(onPressed: () => _load(force: true), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black), child: const Text('Réessayer'))])));
-    if (_all.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)), const SizedBox(height: 12), const Text('Aucun match à venir', style: TextStyle(color: AppTheme.textSecondary)), const SizedBox(height: 16), OutlinedButton(onPressed: () => _load(force: true), child: const Text('Actualiser'))]));
+    if (_loading)
+      return const Center(
+          child: CircularProgressIndicator(color: AppTheme.primary));
+    if (_error != null)
+      return Center(
+          child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.error_outline,
+                    color: Colors.redAccent, size: 36),
+                const SizedBox(height: 12),
+                Text(_error!,
+                    style: const TextStyle(color: Colors.white70),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                    onPressed: () => _load(force: true),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.black),
+                    child: const Text('Réessayer'))
+              ])));
+    if (_all.isEmpty)
+      return Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.sports_soccer,
+            size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)),
+        const SizedBox(height: 12),
+        const Text('Aucun match à venir',
+            style: TextStyle(color: AppTheme.textSecondary)),
+        const SizedBox(height: 16),
+        OutlinedButton(
+            onPressed: () => _load(force: true),
+            child: const Text('Actualiser'))
+      ]));
     final featured = _all.where((m) => m.leagueRank <= 7).toList();
     final others = _all
         .where((m) =>
-            m.leagueRank > 7 &&
-            m.streams.isNotEmpty &&
-            m.streamState != 'dead')
+            m.leagueRank > 7 && m.streams.isNotEmpty && m.streamState != 'dead')
         .toList();
     final sched = _all
         .where((m) =>
-            m.leagueRank > 7 &&
-            (m.streams.isEmpty || m.streamState == 'dead'))
+            m.leagueRank > 7 && (m.streams.isEmpty || m.streamState == 'dead'))
         .toList();
     Widget section(String title, int count, Color color, IconData icon,
         List<LiveMatch> items) {
@@ -182,9 +232,7 @@ class _LiveScreenState extends State<LiveScreen> {
       const SizedBox(width: 8),
       Text(title,
           style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14)),
+              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
       const SizedBox(width: 6),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -193,8 +241,8 @@ class _LiveScreenState extends State<LiveScreen> {
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text('$count',
-            style: const TextStyle(
-                color: AppTheme.textSecondary, fontSize: 11)),
+            style:
+                const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
       ),
     ]);
   }
@@ -206,47 +254,187 @@ class _LiveScreenState extends State<LiveScreen> {
         m.status == 'RÉEL';
     final isReal = m.isVerifiedLive;
     final isPending = m.isPendingCheck;
-    final score = (m.homeScore.isNotEmpty || m.awayScore.isNotEmpty) ? '${m.homeScore} - ${m.awayScore}' : 'vs';
+    final score = (m.homeScore.isNotEmpty || m.awayScore.isNotEmpty)
+        ? '${m.homeScore} - ${m.awayScore}'
+        : 'vs';
     return InkWell(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))),
+      onTap: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))),
       borderRadius: BorderRadius.circular(14),
       child: Container(
         decoration: BoxDecoration(
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isReal ? Colors.greenAccent.withValues(alpha: 0.7) : isLive ? AppTheme.primary.withValues(alpha: 0.6) : AppTheme.surfaceLight),
+          border: Border.all(
+              color: isReal
+                  ? Colors.greenAccent.withValues(alpha: 0.7)
+                  : isLive
+                      ? AppTheme.primary.withValues(alpha: 0.6)
+                      : AppTheme.surfaceLight),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             Row(children: [
-              Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3), decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(6)), child: Row(children: [
-                if (m.leagueBadge.isNotEmpty) Image.network(m.leagueBadge, width: 16, height: 16, errorBuilder: (_,__,___)=> const SizedBox()),
-                const SizedBox(width: 6),
-                Text(m.league, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
-              ])),
+              Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                      color: AppTheme.surfaceLight,
+                      borderRadius: BorderRadius.circular(6)),
+                  child: Row(children: [
+                    if (m.leagueBadge.isNotEmpty)
+                      Image.network(m.leagueBadge,
+                          width: 16,
+                          height: 16,
+                          errorBuilder: (_, __, ___) => const SizedBox()),
+                    const SizedBox(width: 6),
+                    Text(m.league,
+                        style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)),
+                  ])),
               const Spacer(),
-              if (isReal) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.green[700], borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), Text(m.streams.length > 1 ? 'EN DIRECT • ${m.streams.length}' : 'EN DIRECT', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
+              if (isReal)
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: Colors.green[700],
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Row(children: [
+                      Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                              color: Colors.white, shape: BoxShape.circle)),
+                      const SizedBox(width: 6),
+                      Text(
+                          m.streams.length > 1
+                              ? 'EN DIRECT • ${m.streams.length}'
+                              : 'EN DIRECT',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold))
+                    ])),
               // Sur web la sonde est désactivée (pas de CORS) : badge statique
               // au lieu du spinner infini.
-              if (isPending && !kIsWeb) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.orange[800], borderRadius: BorderRadius.circular(20)), child: const Row(children: [SizedBox(width: 6, height: 6, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white)), SizedBox(width: 6), Text('Vérif…', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
-              if (isPending && kIsWeb) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(20)), child: Text('${m.streams.length} source${m.streams.length > 1 ? 's' : ''}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
-              if (!isReal && isLive) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), const Text('DIRECT', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
+              if (isPending && !kIsWeb)
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: Colors.orange[800],
+                        borderRadius: BorderRadius.circular(20)),
+                    child: const Row(children: [
+                      SizedBox(
+                          width: 6,
+                          height: 6,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 1.5, color: Colors.white)),
+                      SizedBox(width: 6),
+                      Text('Vérif…',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold))
+                    ])),
+              if (isPending && kIsWeb)
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Text(
+                        '${m.streams.length} source${m.streams.length > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold))),
+              if (!isReal && isLive)
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Row(children: [
+                      Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                              color: Colors.white, shape: BoxShape.circle)),
+                      const SizedBox(width: 6),
+                      const Text('DIRECT',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold))
+                    ])),
               const SizedBox(width: 6),
-              Text('${m.dateStr} ${m.timeStr}'.trim(), style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+              Text('${m.dateStr} ${m.timeStr}'.trim(),
+                  style: const TextStyle(
+                      color: AppTheme.textSecondary, fontSize: 11)),
             ]),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(child: _team(m.home, m.homeBadge, true)),
               Column(children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(8)), child: Text(score, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))),
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                        color: AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Text(score,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13))),
                 const SizedBox(height: 4),
-                Text(isReal ? 'Match réel' : isPending && !kIsWeb ? 'Vérification…' : isLive ? 'En cours' : 'À venir', style: TextStyle(color: isReal ? Colors.greenAccent : isPending && !kIsWeb ? Colors.orangeAccent : isLive ? AppTheme.primary : Colors.white24, fontSize: 10)),
+                Text(
+                    isReal
+                        ? 'Match réel'
+                        : isPending && !kIsWeb
+                            ? 'Vérification…'
+                            : isLive
+                                ? 'En cours'
+                                : 'À venir',
+                    style: TextStyle(
+                        color: isReal
+                            ? Colors.greenAccent
+                            : isPending && !kIsWeb
+                                ? Colors.orangeAccent
+                                : isLive
+                                    ? AppTheme.primary
+                                    : Colors.white24,
+                        fontSize: 10)),
               ]),
               Expanded(child: _team(m.away, m.awayBadge, false)),
             ]),
             const SizedBox(height: 10),
-            SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isReal || isPending ? 'Regarder le match' : 'Flux générique'), style: ElevatedButton.styleFrom(backgroundColor: isReal || isPending ? Colors.green[600] : AppTheme.primary, foregroundColor: isReal || isPending ? Colors.white : Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
+            SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => LivePlayerScreen(match: m))),
+                    icon: const Icon(Icons.play_arrow, size: 18),
+                    label: Text(isReal || isPending
+                        ? 'Regarder le match'
+                        : 'Flux générique'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: isReal || isPending
+                            ? Colors.green[600]
+                            : AppTheme.primary,
+                        foregroundColor:
+                            isReal || isPending ? Colors.white : Colors.black,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(vertical: 10)))),
           ],
         ),
       ),
@@ -270,8 +458,8 @@ class _LiveScreenState extends State<LiveScreen> {
       );
     } else {
       avatar = Container(
-        decoration: const BoxDecoration(
-            color: Colors.white, shape: BoxShape.circle),
+        decoration:
+            const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
         child: ClipOval(
           child: Image.network(badge,
               fit: BoxFit.contain,
@@ -298,7 +486,12 @@ class _LiveScreenState extends State<LiveScreen> {
               border: Border.all(color: Colors.white12)),
           child: avatar),
       const SizedBox(height: 6),
-      Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+      Text(name,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+              color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
     ]);
   }
 

@@ -105,8 +105,7 @@ class TeamBadgeService {
       final teams = (j['teams'] as List?) ?? [];
       if (teams.isEmpty) return const [];
       final want = normName(teamName);
-      List<Map<String, dynamic>> ordered =
-          teams.cast<Map<String, dynamic>>();
+      List<Map<String, dynamic>> ordered = teams.cast<Map<String, dynamic>>();
       // Mêmes préférences qu'avant : égalité exacte, puis inclusion.
       final exact = ordered
           .where((m) => normName(m['strTeam'] as String? ?? '') == want)
@@ -151,12 +150,10 @@ class TeamBadgeService {
       final ct = r.headers['content-type'] ?? '';
       if (ct.startsWith('image/')) return true;
       // HEAD sans content-type : petit GET de contrôle.
-      final g = await http
-          .get(Uri.parse(url), headers: {
-            ...headers,
-            'Range': 'bytes=0-2047',
-          })
-          .timeout(const Duration(seconds: 6));
+      final g = await http.get(Uri.parse(url), headers: {
+        ...headers,
+        'Range': 'bytes=0-2047',
+      }).timeout(const Duration(seconds: 6));
       if (g.statusCode != 200 && g.statusCode != 206) return false;
       final gct = g.headers['content-type'] ?? '';
       return gct.startsWith('image/') && g.bodyBytes.length >= 512;
@@ -169,9 +166,24 @@ class TeamBadgeService {
   static String normName(String s) {
     var n = s.toLowerCase();
     const accents = {
-      'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'à': 'a', 'â': 'a',
-      'ä': 'a', 'î': 'i', 'ï': 'i', 'ô': 'o', 'ö': 'o', 'ù': 'u',
-      'û': 'u', 'ü': 'u', 'ç': 'c', 'ñ': 'n', 'ß': 'ss', 'ø': 'o',
+      'é': 'e',
+      'è': 'e',
+      'ê': 'e',
+      'ë': 'e',
+      'à': 'a',
+      'â': 'a',
+      'ä': 'a',
+      'î': 'i',
+      'ï': 'i',
+      'ô': 'o',
+      'ö': 'o',
+      'ù': 'u',
+      'û': 'u',
+      'ü': 'u',
+      'ç': 'c',
+      'ñ': 'n',
+      'ß': 'ss',
+      'ø': 'o',
     };
     accents.forEach((k, v) => n = n.replaceAll(k, v));
     n = n.replaceAll(RegExp(r'[^a-z0-9 ]'), ' ');

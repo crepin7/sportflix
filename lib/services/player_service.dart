@@ -43,7 +43,16 @@ class PlayerService {
         logLevel: MPVLogLevel.debug,
         vo: 'gpu',
         bufferSize: 128 * 1024 * 1024,
-        protocolWhitelist: ['https', 'http', 'rtmp', 'rtsp', 'mms', 'udp', 'tcp', 'data'],
+        protocolWhitelist: [
+          'https',
+          'http',
+          'rtmp',
+          'rtsp',
+          'mms',
+          'udp',
+          'tcp',
+          'data'
+        ],
       ),
     );
 
@@ -70,8 +79,7 @@ class PlayerService {
   /// Si [overrideUrl] est fourni (qualité choisie), on le lit directement.
   Future<void> playCustom(String url, Map<String, String> headers,
       {String label = 'live', String? overrideUrl}) async {
-    final String streamUrl =
-        overrideUrl ?? await _resolveVariant(url, headers);
+    final String streamUrl = overrideUrl ?? await _resolveVariant(url, headers);
     final media = Media(
       streamUrl,
       httpHeaders: headers,
@@ -83,7 +91,9 @@ class PlayerService {
 
     try {
       await _player.open(media);
-      try { await _player.setSubtitleTrack(SubtitleTrack.no()); } catch (_) {}
+      try {
+        await _player.setSubtitleTrack(SubtitleTrack.no());
+      } catch (_) {}
     } catch (e, st) {
       debugPrint('[sportflix] open() threw: $e');
       debugPrint('[sportflix] stack: $st');
@@ -93,7 +103,8 @@ class PlayerService {
 
   /// Qualité par défaut : la meilleure ≤ 720p (les 1080p50 ~8 Mbps
   /// figent sur les petits appareils / connexions faibles).
-  Future<String> _resolveVariant(String url, Map<String,String> headers) async {
+  Future<String> _resolveVariant(
+      String url, Map<String, String> headers) async {
     final variants = await fetchVariants(url, headers);
     if (variants.length <= 1) return url;
     final hd = variants.where((v) => v.height > 0 && v.height <= 720).toList();
@@ -128,13 +139,13 @@ class PlayerService {
     for (int i = 0; i < lines.length; i++) {
       final l = lines[i].trim();
       if (!l.startsWith('#EXT-X-STREAM-INF')) continue;
-      final bw =
-          int.tryParse(RegExp(r'BANDWIDTH=(\d+)').firstMatch(l)?.group(1) ?? '') ?? 0;
+      final bw = int.tryParse(
+              RegExp(r'BANDWIDTH=(\d+)').firstMatch(l)?.group(1) ?? '') ??
+          0;
       final h = int.tryParse(
               RegExp(r'RESOLUTION=\d+x(\d+)').firstMatch(l)?.group(1) ?? '') ??
           0;
-      final name =
-          RegExp(r'NAME="([^"]+)"').firstMatch(l)?.group(1) ?? '';
+      final name = RegExp(r'NAME="([^"]+)"').firstMatch(l)?.group(1) ?? '';
       String? variant;
       for (int j = i + 1; j < lines.length; j++) {
         final v = lines[j].trim();
@@ -174,7 +185,7 @@ class PlayerService {
       return null;
     }
   }
-  
+
   /// Headers publics (pour lister les qualités sans relancer la lecture).
   Map<String, String> headersFor(Channel channel) => _buildHeaders(channel);
 
@@ -202,7 +213,8 @@ class PlayerService {
       } else {
         h['Referer'] = 'https://www.wurl.com/';
       }
-    } else if (host.contains('wurl.com') || host.contains('37b4c228.wurl.com')) {
+    } else if (host.contains('wurl.com') ||
+        host.contains('37b4c228.wurl.com')) {
       h['Referer'] = 'https://www.wurl.com/';
       h['Origin'] = 'https://www.wurl.com';
     }

@@ -141,7 +141,8 @@ const kSeedTeamBadges = <String, String>{
   'antwerp': 'https://media.api-sports.io/football/teams/740.png',
   'apoel': 'https://media.api-sports.io/football/teams/1391.png',
   'arouca': 'https://media.api-sports.io/football/teams/240.png',
-  'athletico paranaense': 'https://a.espncdn.com/i/teamlogos/soccer/500/3458.png',
+  'athletico paranaense':
+      'https://a.espncdn.com/i/teamlogos/soccer/500/3458.png',
   'atlanta united': 'https://a.espncdn.com/i/teamlogos/soccer/500/18418.png',
   'atletico mineiro': 'https://media.api-sports.io/football/teams/1062.png',
   'austria wien': 'https://media.api-sports.io/football/teams/17575.png',
@@ -155,7 +156,8 @@ const kSeedTeamBadges = <String, String>{
   'blackburn rovers': 'https://a.espncdn.com/i/teamlogos/soccer/500/365.png',
   'boavista': 'https://media.api-sports.io/football/teams/222.png',
   'bodo glimt': 'https://media.api-sports.io/football/teams/327.png',
-  'borussia monchengladbach': 'https://a.espncdn.com/i/teamlogos/soccer/500/268.png',
+  'borussia monchengladbach':
+      'https://a.espncdn.com/i/teamlogos/soccer/500/268.png',
   'botafogo': 'https://media.api-sports.io/football/teams/120.png',
   'braga': 'https://media.api-sports.io/football/teams/217.png',
   'brann': 'https://media.api-sports.io/football/teams/319.png',
@@ -382,6 +384,7 @@ const kSeedTeamBadges = <String, String>{
   'zamalek': 'https://media.api-sports.io/football/teams/1040.png',
   'zaragoza': 'https://media.api-sports.io/football/teams/1917.png',
 };
+
 /// Drapeaux des sélections (FlagCDN, URL déterministes par code ISO).
 /// Clés normalisées comme TeamBadgeService.normName.
 const kSeedCountryFlags = <String, String>{
