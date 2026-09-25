@@ -72,6 +72,33 @@ class M3uLiveService {
   DateTime? _cacheAt;
   static const _ttl = Duration(minutes: 10);
 
+  /// Résultats de sonde par URL (vivant/mort + heure) pour ne pas retester
+  /// à chaque refresh. TTL identique au cache playlist.
+  final Map<String, (bool, DateTime)> _probeCache = {};
+
+  /// Teste si un flux répond vraiment (200 + playlist). Avec les headers
+  /// du flux (Referer/UA) sinon 403 assuré. Timeout court.
+  Future<bool> probeStream(RealStream s) async {
+    final cached = _probeCache[s.url];
+    if (cached != null &&
+        DateTime.now().difference(cached.$2) < _ttl) {
+      return cached.$1;
+    }
+    var alive = false;
+    try {
+      final r = await http
+          .get(Uri.parse(s.url), headers: s.headers)
+          .timeout(const Duration(seconds: 4));
+      alive = r.statusCode == 200 &&
+          r.body.isNotEmpty &&
+          r.body.contains('#EXTM3U');
+    } catch (_) {
+      alive = false;
+    }
+    _probeCache[s.url] = (alive, DateTime.now());
+    return alive;
+  }
+
   /// Titres hors-foot : on ne garde que le foot (soccer).
   static bool _isFootball(String title) {
     final t = title.toLowerCase();

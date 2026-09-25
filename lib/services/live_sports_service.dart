@@ -24,6 +24,8 @@ class LiveMatch {
   final List<RealStream> streams;
   /// Priorité d'affichage de la compétition (0 = CL ... 50 = autres).
   final int leagueRank;
+  /// État des vrais flux : 'unchecked' (pas encore testé), 'alive', 'dead'.
+  final String streamState;
 
   LiveMatch({
     required this.id,
@@ -41,10 +43,19 @@ class LiveMatch {
     required this.hlsUrl,
     List<RealStream>? streams,
     int? leagueRank,
+    this.streamState = 'unchecked',
   })  : streams = streams ?? const [],
         leagueRank = leagueRank ?? rankForLeague(league);
 
   bool get hasRealStream => streams.isNotEmpty;
+
+  /// Vrai flux vérifié jouable (sonde HTTP passée).
+  bool get isVerifiedLive =>
+      streams.isNotEmpty && streamState == 'alive';
+
+  /// Candidat à vérifier (sonde pas encore passée).
+  bool get isPendingCheck =>
+      streams.isNotEmpty && streamState == 'unchecked';
 
   bool get isLiveNow =>
       status == 'RÉEL' ||
@@ -83,10 +94,15 @@ class LiveMatch {
     return 50;
   }
 
-  /// Tri d'affichage : vrais flux → grosses ligues → en cours → horaire.
+  /// Tri d'affichage : flux vérifiés → candidats → grosses ligues → horaire.
   static int displayOrder(LiveMatch a, LiveMatch b) {
-    final r =
-        (b.hasRealStream ? 1 : 0) - (a.hasRealStream ? 1 : 0);
+    int stateScore(LiveMatch m) {
+      if (m.streamState == 'alive') return 2;
+      if (m.streams.isNotEmpty && m.streamState == 'unchecked') return 1;
+      return 0;
+    }
+
+    final r = stateScore(b).compareTo(stateScore(a));
     if (r != 0) return r;
     final l = a.leagueRank.compareTo(b.leagueRank);
     if (l != 0) return l;
@@ -111,13 +127,57 @@ class LiveMatch {
         leagueBadge: leagueBadge,
         dateStr: dateStr,
         timeStr: timeStr,
-        status: 'RÉEL',
+        status: status,
         homeScore: homeScore,
         awayScore: awayScore,
         hlsUrl: s.first.url,
         streams: s,
         leagueRank: leagueRank,
+        streamState: 'unchecked',
       );
+
+  LiveMatch withStreamState(String state, [List<RealStream>? aliveOnly]) =>
+      LiveMatch(
+        id: id,
+        league: league,
+        home: home,
+        away: away,
+        homeBadge: homeBadge,
+        awayBadge: awayBadge,
+        leagueBadge: leagueBadge,
+        dateStr: dateStr,
+        timeStr: timeStr,
+        status: status,
+        homeScore: homeScore,
+        awayScore: awayScore,
+        hlsUrl: (aliveOnly != null && aliveOnly.isNotEmpty)
+            ? aliveOnly.first.url
+            : hlsUrl,
+        streams: aliveOnly ?? streams,
+        leagueRank: leagueRank,
+        streamState: state,
+      );
+
+  LiveMatch withBadges(String homeB, String awayB) => LiveMatch(
+        id: id,
+        league: league,
+        home: home,
+        away: away,
+        homeBadge: homeB.isNotEmpty ? homeB : homeBadge,
+        awayBadge: awayB.isNotEmpty ? awayB : awayBadge,
+        leagueBadge: leagueBadge,
+        dateStr: dateStr,
+        timeStr: timeStr,
+        status: status,
+        homeScore: homeScore,
+        awayScore: awayScore,
+        hlsUrl: hlsUrl,
+        streams: streams,
+        leagueRank: leagueRank,
+        streamState: streamState,
+      );
+
+  bool get isM3uOnly => id.startsWith('m3u-');
 }
 
 class LiveSportsService {
@@ -231,6 +291,8 @@ class LiveSportsService {
         }
       }
       // Events M3U sans équivalent TheSportsDB -> nouvelles cartes.
+      // Badges d'équipes remplis plus tard par TeamBadgeService (le logo
+      // de l'event est celui de la compétition, pas des équipes).
       for (final e in live) {
         if (used.contains(e)) continue;
         all.insert(
@@ -238,20 +300,21 @@ class LiveSportsService {
           LiveMatch(
             id: 'm3u-${e.teamA.hashCode}-${e.teamB.hashCode}',
             league: e.competition.isNotEmpty
-                ? '${e.competition} • RÉEL'
-                : 'En direct • RÉEL',
+                ? e.competition
+                : 'En direct',
             home: e.teamA,
             away: e.teamB,
-            homeBadge: e.logo,
+            homeBadge: '',
             awayBadge: '',
             leagueBadge: e.logo,
             dateStr: "Aujourd'hui",
             timeStr: '',
-            status: 'RÉEL',
+            status: 'LIVE',
             homeScore: '',
             awayScore: '',
             hlsUrl: e.streams.first.url,
             streams: e.streams,
+            streamState: 'unchecked',
           ),
         );
       }
@@ -259,5 +322,38 @@ class LiveSportsService {
       all.sort(LiveMatch.displayOrder);
     } catch (_) {}
     return all;
+  }
+
+  /// Sonde les vrais flux en arrière-plan : ne garde que les sources qui
+  /// répondent 200 avec une playlist. Les rencontres M3U dont tous les flux
+  /// sont morts sont retirées ; les horaires repassent en générique.
+  /// Sur web : pas de CORS vers ces hébergeurs -> on ne sonde pas.
+  Future<List<LiveMatch>> verifyRealStreams(List<LiveMatch> matches) async {
+    if (kIsWeb) return matches;
+    final m3u = M3uLiveService.instance;
+    final out = <LiveMatch>[];
+    // Par paquets pour ne pas inonder le réseau.
+    for (var i = 0; i < matches.length; i += 8) {
+      final chunk = matches.skip(i).take(8);
+      final verified = await Future.wait(chunk.map((m) async {
+        if (m.streams.isEmpty || m.streamState != 'unchecked') return m;
+        final alive = <RealStream>[];
+        final results = await Future.wait(
+            m.streams.map((s) => m3u.probeStream(s)));
+        for (var k = 0; k < m.streams.length; k++) {
+          if (results[k]) alive.add(m.streams[k]);
+        }
+        if (alive.isEmpty) {
+          if (m.isM3uOnly) return null; // rencontre fantôme -> masquée
+          return m.withStreamState('dead', []);
+        }
+        return m.withStreamState('alive', alive);
+      }));
+      for (final m in verified) {
+        if (m != null) out.add(m);
+      }
+    }
+    out.sort(LiveMatch.displayOrder);
+    return out;
   }
 }

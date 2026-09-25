@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/live_sports_service.dart';
+import '../services/team_badge_service.dart';
 import '../theme.dart';
 import 'live_player_screen.dart';
 
@@ -24,11 +25,58 @@ class _LiveScreenState extends State<LiveScreen> {
   Future<void> _load({bool force = false}) async {
     setState(() { _loading = true; _error = null; });
     try {
-      final list = await _service.fetchAll(forceRefresh: force);
+      // Phase 1 : calendriers + candidats flux (rapide).
+      var list = await _service.fetchAll(forceRefresh: force);
+      if (!mounted) return;
       setState(() { _all = list; _loading = false; });
+      // Phase 2 : sonde des flux (retire les rencontres mortes).
+      list = await _service.verifyRealStreams(list);
+      if (!mounted) return;
+      setState(() { _all = list; });
+      // Phase 3 : vrais blasons d'équipes (progressif, avec cache).
+      await _enrichBadges(list);
     } catch (e) {
+      if (!mounted) return;
       setState(() { _error = e.toString(); _loading = false; });
     }
+  }
+
+  Future<void> _enrichBadges(List<LiveMatch> list) async {
+    try {
+      final missing = <String>{};
+      for (final m in list) {
+        if (!mounted) return;
+        if (TeamBadgeService.instance.cachedBadge(m.home).isEmpty) {
+          missing.add(m.home);
+        }
+        if (TeamBadgeService.instance.cachedBadge(m.away).isEmpty) {
+          missing.add(m.away);
+        }
+      }
+      if (missing.isEmpty) {
+        _applyCachedBadges();
+        return;
+      }
+      // Applique d'abord ce que le cache connaît déjà.
+      _applyCachedBadges();
+      // Puis va chercher le reste en ligne, par vagues.
+      final found =
+          await TeamBadgeService.instance.enrich(missing);
+      if (!mounted || found.isEmpty) return;
+      _applyCachedBadges();
+    } catch (_) {}
+  }
+
+  void _applyCachedBadges() {
+    if (!mounted) return;
+    setState(() {
+      _all = _all.map((m) {
+        final hb = TeamBadgeService.instance.cachedBadge(m.home);
+        final ab = TeamBadgeService.instance.cachedBadge(m.away);
+        if (hb.isEmpty && ab.isEmpty) return m;
+        return m.withBadges(hb, ab);
+      }).toList();
+    });
   }
 
   @override
@@ -74,8 +122,12 @@ class _LiveScreenState extends State<LiveScreen> {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
     if (_error != null) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.error_outline, color: Colors.redAccent, size: 36), const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center), const SizedBox(height: 16), ElevatedButton(onPressed: () => _load(force: true), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black), child: const Text('Réessayer'))])));
     if (_all.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)), const SizedBox(height: 12), const Text('Aucun match à venir', style: TextStyle(color: AppTheme.textSecondary)), const SizedBox(height: 16), OutlinedButton(onPressed: () => _load(force: true), child: const Text('Actualiser'))]));
-    final real = _all.where((m) => m.hasRealStream).toList();
-    final sched = _all.where((m) => !m.hasRealStream).toList();
+    final real = _all
+        .where((m) => m.streams.isNotEmpty && m.streamState != 'dead')
+        .toList();
+    final sched = _all
+        .where((m) => m.streams.isEmpty || m.streamState == 'dead')
+        .toList();
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
       color: AppTheme.primary,
@@ -134,7 +186,8 @@ class _LiveScreenState extends State<LiveScreen> {
         m.status == '1H' ||
         m.status == '2H' ||
         m.status == 'RÉEL';
-    final isReal = m.hasRealStream;
+    final isReal = m.isVerifiedLive;
+    final isPending = m.isPendingCheck;
     final score = (m.homeScore.isNotEmpty || m.awayScore.isNotEmpty) ? '${m.homeScore} - ${m.awayScore}' : 'vs';
     return InkWell(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))),
@@ -156,6 +209,7 @@ class _LiveScreenState extends State<LiveScreen> {
               ])),
               const Spacer(),
               if (isReal) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.green[700], borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), Text(m.streams.length > 1 ? 'RÉEL • ${m.streams.length} sources' : 'RÉEL', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
+              if (isPending) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.orange[800], borderRadius: BorderRadius.circular(20)), child: const Row(children: [SizedBox(width: 6, height: 6, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white)), SizedBox(width: 6), Text('Vérif…', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
               if (!isReal && isLive) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), const Text('DIRECT', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
               const SizedBox(width: 6),
               Text('${m.dateStr} ${m.timeStr}'.trim(), style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
@@ -166,12 +220,12 @@ class _LiveScreenState extends State<LiveScreen> {
               Column(children: [
                 Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(8)), child: Text(score, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))),
                 const SizedBox(height: 4),
-                Text(isReal ? 'Match réel' : isLive ? 'En cours' : 'À venir', style: TextStyle(color: isReal ? Colors.greenAccent : isLive ? AppTheme.primary : Colors.white24, fontSize: 10)),
+                Text(isReal ? 'Match réel' : isPending ? 'Vérification…' : isLive ? 'En cours' : 'À venir', style: TextStyle(color: isReal ? Colors.greenAccent : isPending ? Colors.orangeAccent : isLive ? AppTheme.primary : Colors.white24, fontSize: 10)),
               ]),
               Expanded(child: _team(m.away, m.awayBadge, false)),
             ]),
             const SizedBox(height: 10),
-            SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isReal ? 'Regarder le match' : 'Flux générique'), style: ElevatedButton.styleFrom(backgroundColor: isReal ? Colors.green[600] : AppTheme.primary, foregroundColor: isReal ? Colors.white : Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
+            SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LivePlayerScreen(match: m))), icon: const Icon(Icons.play_arrow, size: 18), label: Text(isReal || isPending ? 'Regarder le match' : 'Flux générique'), style: ElevatedButton.styleFrom(backgroundColor: isReal || isPending ? Colors.green[600] : AppTheme.primary, foregroundColor: isReal || isPending ? Colors.white : Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), padding: const EdgeInsets.symmetric(vertical: 10)))),
           ],
         ),
       ),
