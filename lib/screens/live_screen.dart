@@ -276,26 +276,34 @@ class _LiveScreenState extends State<LiveScreen> {
         child: Column(
           children: [
             Row(children: [
-              Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                      color: AppTheme.surfaceLight,
-                      borderRadius: BorderRadius.circular(6)),
-                  child: Row(children: [
-                    if (m.leagueBadge.isNotEmpty)
-                      Image.network(m.leagueBadge,
-                          width: 16,
-                          height: 16,
-                          errorBuilder: (_, __, ___) => const SizedBox()),
-                    const SizedBox(width: 6),
-                    Text(m.league,
-                        style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600)),
-                  ])),
-              const Spacer(),
+              Flexible(
+                child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(6)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (m.leagueBadge.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: Image.network(m.leagueBadge,
+                              width: 16,
+                              height: 16,
+                              errorBuilder: (_, __, ___) => const SizedBox()),
+                        ),
+                      Flexible(
+                        child: Text(m.league,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ])),
+              ),
+              const SizedBox(width: 6),
               if (isReal)
                 Container(
                     padding:
@@ -375,9 +383,14 @@ class _LiveScreenState extends State<LiveScreen> {
                               fontWeight: FontWeight.bold))
                     ])),
               const SizedBox(width: 6),
-              Text('${m.dateStr} ${m.timeStr}'.trim(),
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 11)),
+              Flexible(
+                child: Text('${m.dateStr} ${m.timeStr}'.trim(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(
+                        color: AppTheme.textSecondary, fontSize: 11)),
+              ),
             ]),
             const SizedBox(height: 12),
             Row(children: [
