@@ -74,17 +74,59 @@ class _LiveScreenState extends State<LiveScreen> {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
     if (_error != null) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.error_outline, color: Colors.redAccent, size: 36), const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center), const SizedBox(height: 16), ElevatedButton(onPressed: () => _load(force: true), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black), child: const Text('Réessayer'))])));
     if (_all.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)), const SizedBox(height: 12), const Text('Aucun match à venir', style: TextStyle(color: AppTheme.textSecondary)), const SizedBox(height: 16), OutlinedButton(onPressed: () => _load(force: true), child: const Text('Actualiser'))]));
+    final real = _all.where((m) => m.hasRealStream).toList();
+    final sched = _all.where((m) => !m.hasRealStream).toList();
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
       color: AppTheme.primary,
       backgroundColor: AppTheme.surface,
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsets.all(12),
-        itemCount: _all.length,
-        separatorBuilder: (_,__) => const SizedBox(height: 10),
-        itemBuilder: (c,i) => _matchCard(_all[i]),
+        children: [
+          if (real.isNotEmpty) ...[
+            _sectionHeader('En ce moment', real.length, Colors.greenAccent),
+            const SizedBox(height: 10),
+            for (final m in real) ...[
+              _matchCard(m),
+              const SizedBox(height: 10),
+            ],
+          ],
+          if (sched.isNotEmpty) ...[
+            _sectionHeader('Horaires', sched.length, AppTheme.textSecondary),
+            const SizedBox(height: 10),
+            for (final m in sched) ...[
+              _matchCard(m),
+              const SizedBox(height: 10),
+            ],
+          ],
+        ],
       ),
     );
+  }
+
+  Widget _sectionHeader(String title, int count, Color color) {
+    return Row(children: [
+      Container(width: 4, height: 16,
+          decoration: BoxDecoration(
+              color: color, borderRadius: BorderRadius.circular(2))),
+      const SizedBox(width: 8),
+      Text(title,
+          style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14)),
+      const SizedBox(width: 6),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceLight,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text('$count',
+            style: const TextStyle(
+                color: AppTheme.textSecondary, fontSize: 11)),
+      ),
+    ]);
   }
 
   Widget _matchCard(LiveMatch m) {
@@ -137,10 +179,85 @@ class _LiveScreenState extends State<LiveScreen> {
   }
 
   Widget _team(String name, String badge, bool isHome) {
+    final initials = _initials(name);
+    final avatarColor = _avatarColor(name);
+    Widget avatar;
+    if (badge.isEmpty) {
+      avatar = Container(
+        decoration: BoxDecoration(color: avatarColor, shape: BoxShape.circle),
+        child: Center(
+          child: Text(initials,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16)),
+        ),
+      );
+    } else {
+      avatar = Container(
+        decoration: const BoxDecoration(
+            color: Colors.white, shape: BoxShape.circle),
+        child: ClipOval(
+          child: Image.network(badge,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Container(
+                    decoration: BoxDecoration(
+                        color: avatarColor, shape: BoxShape.circle),
+                    child: Center(
+                      child: Text(initials,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16)),
+                    ),
+                  )),
+        ),
+      );
+    }
     return Column(children: [
-      Container(width: 48, height: 48, decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.white12)), child: ClipOval(child: badge.isEmpty ? const Icon(Icons.shield, color: Colors.black26) : Image.network(badge, fit: BoxFit.contain, errorBuilder: (_,__,___)=> const Icon(Icons.shield, color: Colors.black26)))),
+      Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white12)),
+          child: avatar),
       const SizedBox(height: 6),
       Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
     ]);
+  }
+
+  /// "Real Madrid" -> "RM", "PSG" -> "PS", "?" -> "?".
+  String _initials(String name) {
+    final words = name
+        .replaceAll(RegExp(r'[^A-Za-zÀ-ÿ0-9 ]'), ' ')
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return '?';
+    if (words.length == 1) {
+      final w = words.first;
+      return w.substring(0, w.length >= 2 ? 2 : 1).toUpperCase();
+    }
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
+  /// Couleur stable par équipe (même équipe = même couleur).
+  Color _avatarColor(String name) {
+    const palette = [
+      Color(0xFF1B7A3D),
+      Color(0xFF1565C0),
+      Color(0xFFC62828),
+      Color(0xFFEF6C00),
+      Color(0xFF6A1B9A),
+      Color(0xFF00838F),
+      Color(0xFF455A64),
+      Color(0xFFAD1457),
+    ];
+    var hash = 0;
+    for (final c in name.codeUnits) {
+      hash = (hash * 31 + c) & 0x7fffffff;
+    }
+    return palette[hash % palette.length];
   }
 }

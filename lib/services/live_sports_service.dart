@@ -21,6 +21,8 @@ class LiveMatch {
   /// Vrais flux du match (sources live M3U). Vide = horaire seul,
   /// le flux ouvert est alors le générique de repli [hlsUrl].
   final List<RealStream> streams;
+  /// Priorité d'affichage de la compétition (0 = CL ... 50 = autres).
+  final int leagueRank;
 
   LiveMatch({
     required this.id,
@@ -37,9 +39,61 @@ class LiveMatch {
     required this.awayScore,
     required this.hlsUrl,
     List<RealStream>? streams,
-  }) : streams = streams ?? const [];
+    int? leagueRank,
+  })  : streams = streams ?? const [],
+        leagueRank = leagueRank ?? rankForLeague(league);
 
   bool get hasRealStream => streams.isNotEmpty;
+
+  bool get isLiveNow =>
+      status == 'RÉEL' ||
+      status.toLowerCase().contains('live') ||
+      status == '1H' ||
+      status == '2H';
+
+  /// Rang d'affichage : grandes compétitions d'abord, œufs brouillés ensuite.
+  static int rankForLeague(String league) {
+    final l = league.toLowerCase();
+    if (l.contains('champions league') &&
+        !l.contains('europa') &&
+        !l.contains('conference')) {
+      return 0;
+    }
+    if (l.contains('europa league')) return 1;
+    if (l.contains('premier league')) return 2;
+    if (l.contains('la liga') || l.contains('laliga')) return 3;
+    if (l.contains('serie a')) return 4;
+    if (l.contains('bundesliga')) return 5;
+    if (l.contains('ligue 1')) return 6;
+    if (l.contains('conference league')) return 7;
+    if (l.contains('copa') ||
+        l.contains('fa cup') ||
+        l.contains('coupe') ||
+        l.contains('cup')) return 8;
+    if (l.contains('nations league') ||
+        l.contains('naciones') ||
+        l.contains('nations')) return 9;
+    if (l.contains('qualif') || l.contains('clasificaci')) return 10;
+    return 50;
+  }
+
+  /// Tri d'affichage : vrais flux → grosses ligues → en cours → horaire.
+  static int displayOrder(LiveMatch a, LiveMatch b) {
+    final r =
+        (b.hasRealStream ? 1 : 0) - (a.hasRealStream ? 1 : 0);
+    if (r != 0) return r;
+    final l = a.leagueRank.compareTo(b.leagueRank);
+    if (l != 0) return l;
+    final s =
+        (a.isLiveNow ? 0 : 1).compareTo(b.isLiveNow ? 0 : 1);
+    if (s != 0) return s;
+    final name = '${a.league}|${a.home}|${a.away}';
+    final nameB = '${b.league}|${b.home}|${b.away}';
+    final t =
+        '${a.dateStr} ${a.timeStr}'.compareTo('${b.dateStr} ${b.timeStr}');
+    if (t != 0) return t;
+    return name.compareTo(nameB);
+  }
 
   LiveMatch withRealStreams(List<RealStream> s) => LiveMatch(
         id: id,
@@ -56,6 +110,7 @@ class LiveMatch {
         awayScore: awayScore,
         hlsUrl: s.first.url,
         streams: s,
+        leagueRank: leagueRank,
       );
 }
 
@@ -194,12 +249,8 @@ class LiveSportsService {
           ),
         );
       }
-      // Les vrais matchs d'abord.
-      all.sort((a, b) {
-        final r = (b.hasRealStream ? 1 : 0) - (a.hasRealStream ? 1 : 0);
-        if (r != 0) return r;
-        return 0;
-      });
+      // Les vrais matchs d'abord, triés par compétition puis horaire.
+      all.sort(LiveMatch.displayOrder);
     } catch (_) {}
     return all;
   }
