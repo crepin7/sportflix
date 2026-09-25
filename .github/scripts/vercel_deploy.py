@@ -68,11 +68,21 @@ def main():
 
     # 1) Upload de tous les fichiers (l'endpoint de déduplication /v2/files
     #    en JSON est instable : on uploade directement, build/web est petit).
+    #    Retry avec backoff : les runners CI se prennent parfois des 403
+    #    transitoires (rate-limit/WAF).
     for rel, data, sha in files:
-        api("POST", "/v2/files", raw=data, headers={
-            "x-vercel-digest": sha,
-            "x-vercel-size": str(len(data)),
-        })
+        for attempt in range(5):
+            try:
+                api("POST", "/v2/files", raw=data, headers={
+                    "x-vercel-digest": sha,
+                    "x-vercel-size": str(len(data)),
+                })
+                break
+            except Exception as e:
+                print(f"retry {attempt + 1}/5 {rel} ({len(data) // 1024} Ko): {e}")
+                if attempt == 4:
+                    raise
+                time.sleep(2 * (attempt + 1))
     print("upload OK")
     dep = api("POST", "/v13/deployments", body={
         "name": "sportflix",
