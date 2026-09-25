@@ -5,12 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Logos des vraies équipes, quelle que soit l'équipe.
 ///
-/// Chaîne de résolution (la première qui marche gagne) :
-/// 1. cache local persistant (90 jours) — instantané, hors-ligne OK ;
-/// 2. TheSportsDB `searchteams` (gratuit, CORS * donc OK sur web aussi).
+/// Astuce : la clé gratuite TheSportsDB ne renvoie PAS les blasons
+/// (strTeamBadge vide), mais renvoie les IDs ESPN/API-Football, à partir
+/// desquels on construit des URLs de logos CDN stables et vérifiées :
+/// - ESPN : https://a.espncdn.com/i/teamlogos/soccer/500/{idESPN}.png
+/// - API-Sports : https://media.api-sports.io/football/teams/{id}.png
 ///
-/// Utilisé en 3e phase du chargement En direct : les cartes s'affichent
-/// d'abord avec initiales, puis les vrais blasons arrivent au fil de l'eau.
+/// Chaîne de résolution : cache 90j -> searchteams -> URL vérifiée (200 +
+/// image). Seules les URLs vérifiées sont cachées/affichées.
 class TeamBadgeService {
   static final TeamBadgeService instance = TeamBadgeService._();
   TeamBadgeService._();
@@ -66,6 +68,15 @@ class TeamBadgeService {
   }
 
   Future<String> _searchBadge(String teamName) async {
+    final candidates = await _searchCandidates(teamName);
+    for (final url in candidates) {
+      if (await _verifyImage(url)) return url;
+    }
+    return '';
+  }
+
+  /// URLs candidates par ordre de préférence (toutes à vérifier).
+  Future<List<String>> _searchCandidates(String teamName) async {
     try {
       final q = Uri.encodeQueryComponent(teamName);
       final url = Uri.parse(
@@ -73,34 +84,69 @@ class TeamBadgeService {
       final r = await http
           .get(url, headers: kIsWeb ? const {} : {'User-Agent': 'Mozilla/5.0'})
           .timeout(const Duration(seconds: 6));
-      if (r.statusCode != 200) return '';
+      if (r.statusCode != 200) return const [];
       final j = jsonDecode(r.body) as Map<String, dynamic>;
       final teams = (j['teams'] as List?) ?? [];
-      if (teams.isEmpty) return '';
+      if (teams.isEmpty) return const [];
       final want = normName(teamName);
-      // 1) égalité normalisée exacte.
-      for (final t in teams) {
-        final m = t as Map<String, dynamic>;
-        final badge = (m['strTeamBadge'] as String?) ?? '';
-        if (badge.isEmpty) continue;
-        if (normName(m['strTeam'] as String? ?? '') == want) return badge;
-      }
-      // 2) inclusion (ex: "PSG" dans "Paris Saint-Germain").
-      for (final t in teams) {
-        final m = t as Map<String, dynamic>;
-        final badge = (m['strTeamBadge'] as String?) ?? '';
-        if (badge.isEmpty) continue;
+      List<Map<String, dynamic>> ordered =
+          teams.cast<Map<String, dynamic>>();
+      // Mêmes préférences qu'avant : égalité exacte, puis inclusion.
+      final exact = ordered
+          .where((m) => normName(m['strTeam'] as String? ?? '') == want)
+          .toList();
+      final incl = ordered.where((m) {
         final cand = normName(m['strTeam'] as String? ?? '');
-        if (cand.contains(want) || want.contains(cand)) return badge;
+        return cand.contains(want) || want.contains(cand);
+      }).toList();
+      final rest = ordered
+          .where((m) => !exact.contains(m) && !incl.contains(m))
+          .toList();
+      ordered = [...exact, ...incl, ...rest];
+      final urls = <String>[];
+      for (final m in ordered.take(3)) {
+        final direct = (m['strTeamBadge'] as String?) ?? '';
+        if (direct.isNotEmpty) urls.add(direct);
+        final espn = m['idESPN']?.toString() ?? '';
+        if (espn.isNotEmpty && espn != '0') {
+          urls.add('https://a.espncdn.com/i/teamlogos/soccer/500/$espn.png');
+        }
+        final api = m['idAPIfootball']?.toString() ?? '';
+        if (api.isNotEmpty && api != '0') {
+          urls.add('https://media.api-sports.io/football/teams/$api.png');
+        }
       }
-      // 3) premier avec blason.
-      for (final t in teams) {
-        final badge =
-            ((t as Map<String, dynamic>)['strTeamBadge'] as String?) ?? '';
-        if (badge.isNotEmpty) return badge;
-      }
-    } catch (_) {}
-    return '';
+      return urls;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Vérifie qu'une URL rend vraiment une image (pas un 404/placeholder).
+  /// HEAD suffit (headers seuls, pas de téléchargement).
+  Future<bool> _verifyImage(String url) async {
+    final headers =
+        kIsWeb ? const <String, String>{} : {'User-Agent': 'Mozilla/5.0'};
+    try {
+      final r = await http
+          .head(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 6));
+      if (r.statusCode != 200) return false;
+      final ct = r.headers['content-type'] ?? '';
+      if (ct.startsWith('image/')) return true;
+      // HEAD sans content-type : petit GET de contrôle.
+      final g = await http
+          .get(Uri.parse(url), headers: {
+            ...headers,
+            'Range': 'bytes=0-2047',
+          })
+          .timeout(const Duration(seconds: 6));
+      if (g.statusCode != 200 && g.statusCode != 206) return false;
+      final gct = g.headers['content-type'] ?? '';
+      return gct.startsWith('image/') && g.bodyBytes.length >= 512;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// "Paris Saint-Germain" -> "paris saint germain".

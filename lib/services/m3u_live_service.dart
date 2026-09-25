@@ -218,8 +218,11 @@ class M3uLiveService {
       source = rest.substring(pipeIdx + 1).trim();
       rest = rest.substring(0, pipeIdx).trim();
     }
-    // retire suffixe " (FAWA)" / " (TVF90)" collé aux équipes quand pas de |
-    rest = rest.replaceAll(RegExp(r'\s*\((FAWA|TVF90|STRMCNTR)\)\s*$'), '');
+    // Retire les tags de source collés aux équipes : " (FAWA)", " (PLIBRE)",
+    // " (STP)", " (TVF90 | beIN Ñ)"... En profiter pour fusionner les
+    // doublons (même match, plusieurs sources) et nettoyer l'affichage.
+    // Limité aux parenthèses courtes de fin (vrais noms d'équipes préservés).
+    rest = rest.replaceAll(RegExp(r'\s*\([^()]{1,24}\)\s*$'), '');
     final vsMatch =
         RegExp(r'^(.*?)\s+vs\.?\s+(.*?)$', caseSensitive: false)
             .firstMatch(rest);

@@ -76,7 +76,8 @@ class LiveMatch {
     bool hasAny(List<String> keys) => keys.any(l.contains);
     // 2e divisions et échelons jeunes : jamais au même rang que l'élite.
     if (hasAny([
-      'hyper motion', 'hypermotion', 'segunda', 'serie b', 'serie c',
+      'hyper motion', 'hypermotion', 'la liga 2', 'laliga 2', 'liga 2',
+      'segunda', 'serie b', 'serie c',
       'bundesliga 2', '2. bundesliga', 'ligue 2', 'championship',
       'league one', 'league two', 'premier league 2', ' u21', ' u20',
       ' u19', ' youth', 'primavera', 'reserves', ' w ',
