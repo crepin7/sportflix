@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../services/live_sports_service.dart';
 import '../services/team_badge_service.dart';
@@ -26,15 +27,17 @@ class _LiveScreenState extends State<LiveScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       // Phase 1 : calendriers + candidats flux (rapide).
-      var list = await _service.fetchAll(forceRefresh: force);
+      final list = await _service.fetchAll(forceRefresh: force);
       if (!mounted) return;
       setState(() { _all = list; _loading = false; });
-      // Phase 2 : sonde des flux (retire les rencontres mortes).
-      list = await _service.verifyRealStreams(list);
-      if (!mounted) return;
-      setState(() { _all = list; });
-      // Phase 3 : vrais blasons d'équipes (progressif, avec cache).
+      // Phase 2 : vrais blasons (rapide grâce au cache, converge au fil
+      // des ouvertures) avant la sonde réseau plus lente.
       await _enrichBadges(list);
+      if (!mounted) return;
+      // Phase 3 : sonde des flux (retire les rencontres mortes).
+      final verified = await _service.verifyRealStreams(_all);
+      if (!mounted) return;
+      setState(() { _all = verified; });
     } catch (e) {
       if (!mounted) return;
       setState(() { _error = e.toString(); _loading = false; });
@@ -52,6 +55,9 @@ class _LiveScreenState extends State<LiveScreen> {
         if (TeamBadgeService.instance.cachedBadge(m.away).isEmpty) {
           missing.add(m.away);
         }
+        // La liste est triée (grosses ligues d'abord) : les 60 premiers
+        // suffisent par ouverture, le cache fait converger la suite.
+        if (missing.length >= 60) break;
       }
       if (missing.isEmpty) {
         _applyCachedBadges();
@@ -122,12 +128,33 @@ class _LiveScreenState extends State<LiveScreen> {
     if (_loading) return const Center(child: CircularProgressIndicator(color: AppTheme.primary));
     if (_error != null) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.error_outline, color: Colors.redAccent, size: 36), const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center), const SizedBox(height: 16), ElevatedButton(onPressed: () => _load(force: true), style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary, foregroundColor: Colors.black), child: const Text('Réessayer'))])));
     if (_all.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sports_soccer, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)), const SizedBox(height: 12), const Text('Aucun match à venir', style: TextStyle(color: AppTheme.textSecondary)), const SizedBox(height: 16), OutlinedButton(onPressed: () => _load(force: true), child: const Text('Actualiser'))]));
-    final real = _all
-        .where((m) => m.streams.isNotEmpty && m.streamState != 'dead')
+    final featured = _all.where((m) => m.leagueRank <= 7).toList();
+    final others = _all
+        .where((m) =>
+            m.leagueRank > 7 &&
+            m.streams.isNotEmpty &&
+            m.streamState != 'dead')
         .toList();
     final sched = _all
-        .where((m) => m.streams.isEmpty || m.streamState == 'dead')
+        .where((m) =>
+            m.leagueRank > 7 &&
+            (m.streams.isEmpty || m.streamState == 'dead'))
         .toList();
+    Widget section(String title, int count, Color color, IconData icon,
+        List<LiveMatch> items) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(title, count, color, icon),
+          const SizedBox(height: 10),
+          for (final m in items) ...[
+            _matchCard(m),
+            const SizedBox(height: 10),
+          ],
+        ],
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
       color: AppTheme.primary,
@@ -135,32 +162,23 @@ class _LiveScreenState extends State<LiveScreen> {
       child: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          if (real.isNotEmpty) ...[
-            _sectionHeader('En ce moment', real.length, Colors.greenAccent),
-            const SizedBox(height: 10),
-            for (final m in real) ...[
-              _matchCard(m),
-              const SizedBox(height: 10),
-            ],
-          ],
-          if (sched.isNotEmpty) ...[
-            _sectionHeader('Horaires', sched.length, AppTheme.textSecondary),
-            const SizedBox(height: 10),
-            for (final m in sched) ...[
-              _matchCard(m),
-              const SizedBox(height: 10),
-            ],
-          ],
+          if (featured.isNotEmpty)
+            section("À l'affiche", featured.length, Colors.amber,
+                Icons.emoji_events, featured),
+          if (others.isNotEmpty)
+            section('Autres directs', others.length, Colors.greenAccent,
+                Icons.live_tv, others),
+          if (sched.isNotEmpty)
+            section('Horaires', sched.length, AppTheme.textSecondary,
+                Icons.schedule, sched),
         ],
       ),
     );
   }
 
-  Widget _sectionHeader(String title, int count, Color color) {
+  Widget _sectionHeader(String title, int count, Color color, IconData icon) {
     return Row(children: [
-      Container(width: 4, height: 16,
-          decoration: BoxDecoration(
-              color: color, borderRadius: BorderRadius.circular(2))),
+      Icon(icon, color: color, size: 16),
       const SizedBox(width: 8),
       Text(title,
           style: const TextStyle(
@@ -209,7 +227,10 @@ class _LiveScreenState extends State<LiveScreen> {
               ])),
               const Spacer(),
               if (isReal) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.green[700], borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), Text(m.streams.length > 1 ? 'RÉEL • ${m.streams.length} sources' : 'RÉEL', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
-              if (isPending) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.orange[800], borderRadius: BorderRadius.circular(20)), child: const Row(children: [SizedBox(width: 6, height: 6, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white)), SizedBox(width: 6), Text('Vérif…', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
+              // Sur web la sonde est désactivée (pas de CORS) : badge statique
+              // au lieu du spinner infini.
+              if (isPending && !kIsWeb) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.orange[800], borderRadius: BorderRadius.circular(20)), child: const Row(children: [SizedBox(width: 6, height: 6, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white)), SizedBox(width: 6), Text('Vérif…', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
+              if (isPending && kIsWeb) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(20)), child: Text('${m.streams.length} source${m.streams.length > 1 ? 's' : ''}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
               if (!isReal && isLive) Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)), child: Row(children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)), const SizedBox(width: 6), const Text('DIRECT', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))])),
               const SizedBox(width: 6),
               Text('${m.dateStr} ${m.timeStr}'.trim(), style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
@@ -220,7 +241,7 @@ class _LiveScreenState extends State<LiveScreen> {
               Column(children: [
                 Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: AppTheme.surfaceLight, borderRadius: BorderRadius.circular(8)), child: Text(score, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13))),
                 const SizedBox(height: 4),
-                Text(isReal ? 'Match réel' : isPending ? 'Vérification…' : isLive ? 'En cours' : 'À venir', style: TextStyle(color: isReal ? Colors.greenAccent : isPending ? Colors.orangeAccent : isLive ? AppTheme.primary : Colors.white24, fontSize: 10)),
+                Text(isReal ? 'Match réel' : isPending && !kIsWeb ? 'Vérification…' : isLive ? 'En cours' : 'À venir', style: TextStyle(color: isReal ? Colors.greenAccent : isPending && !kIsWeb ? Colors.orangeAccent : isLive ? AppTheme.primary : Colors.white24, fontSize: 10)),
               ]),
               Expanded(child: _team(m.away, m.awayBadge, false)),
             ]),

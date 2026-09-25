@@ -68,10 +68,29 @@ class LiveMatch {
   static Map<String, String> get _httpHeaders =>
       kIsWeb ? {} : {'User-Agent': 'Mozilla/5.0'};
 
-  /// Rang d'affichage : grandes compétitions d'abord, œufs brouillés ensuite.
+  /// Rang d'affichage : grandes compétitions d'abord.
+  /// Attention aux homonymes : "COSAFA Champions League" n'est pas la C1,
+  /// "LaLiga Hypermotion" est la D2 espagnole, etc.
   static int rankForLeague(String league) {
     final l = league.toLowerCase();
+    bool hasAny(List<String> keys) => keys.any(l.contains);
+    // 2e divisions et échelons jeunes : jamais au même rang que l'élite.
+    if (hasAny([
+      'hyper motion', 'hypermotion', 'segunda', 'serie b', 'serie c',
+      'bundesliga 2', '2. bundesliga', 'ligue 2', 'championship',
+      'league one', 'league two', 'premier league 2', ' u21', ' u20',
+      ' u19', ' youth', 'primavera', 'reserves', ' w ',
+    ])) {
+      return 12;
+    }
+    // Autres confédérations : pas la C1/C3 UEFA.
+    final otherConfed = hasAny([
+      'cosafa', 'concacaf', 'libertadores', 'sudamericana', 'cecafa',
+      'wafu', 'asean', 'arab cup', 'afc champions', 'caf champions',
+      'caf confederation', 'ofc champions', 'afc cup',
+    ]);
     if (l.contains('champions league') &&
+        !otherConfed &&
         !l.contains('europa') &&
         !l.contains('conference')) {
       return 0;
