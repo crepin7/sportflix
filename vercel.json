@@ -1,4 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/live.m3u8", "destination": "https://s.id/d9Live" },
+    { "source": "/api/epg/:file", "destination": "https://epgshare01.online/epgshare01/:file" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

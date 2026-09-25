@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Un flux réel extrait d'une playlist M3U publique (ex: doms9/iptv Live Events).
@@ -58,7 +59,11 @@ class M3uLiveService {
   static const _primary =
       'https://s.id/d9Live'; // doms9/iptv Live Events (redirect)
   static const _fallback =
-      'https://raw.githubusercontent.com/doms9/iptv/default/M3U8/live.m3u8';
+      'https://raw.githubusercontent.com/doms9/iptv/refs/heads/default/M3U8/events.m3u8';
+
+  /// Sur web, on passe par le proxy Vercel (même origine, pas de CORS).
+  static List<String> get _playlistUrls =>
+      kIsWeb ? ['/api/live.m3u8'] : [_primary, _fallback];
 
   static const _defaultUa =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36';
@@ -93,10 +98,13 @@ class M3uLiveService {
       return _cache!;
     }
     String? body;
-    for (final url in [_primary, _fallback]) {
+    // Navigateurs : User-Agent interdit (forbidden header) -> sans headers.
+    final headers =
+        kIsWeb ? <String, String>{} : {'User-Agent': _defaultUa};
+    for (final url in _playlistUrls) {
       try {
         final r = await http
-            .get(Uri.parse(url), headers: {'User-Agent': _defaultUa})
+            .get(Uri.parse(url), headers: headers)
             .timeout(const Duration(seconds: 15));
         if (r.statusCode == 200 && r.body.contains('#EXTINF')) {
           body = r.body;

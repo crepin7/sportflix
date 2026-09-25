@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xml/xml_events.dart';
@@ -60,6 +61,15 @@ class EpgService {
     'fr': 'https://epgshare01.online/epgshare01/epg_ripper_FR1.xml.gz',
   };
 
+  /// Sur web : proxy Vercel même origine (epgshare01 n'envoie pas de CORS).
+  static String _urlFor(String src) {
+    final url = _sources[src];
+    if (url == null) return '';
+    if (!kIsWeb) return url;
+    final file = url.split('/').last;
+    return '/api/epg/$file';
+  }
+
   static const _prefsKey = 'epg_cache_v1';
   static const _ttl = Duration(hours: 12);
 
@@ -84,11 +94,12 @@ class EpgService {
     }
     var changed = false;
     for (final entry in missing.entries) {
-      final url = _sources[entry.key];
-      if (url == null) continue;
+      final url = _urlFor(entry.key);
+      if (url.isEmpty) continue;
       try {
         final r = await http
-            .get(Uri.parse(url), headers: {'User-Agent': 'Mozilla/5.0'})
+            .get(Uri.parse(url),
+                headers: kIsWeb ? const {} : {'User-Agent': 'Mozilla/5.0'})
             .timeout(const Duration(seconds: 60));
         if (r.statusCode != 200 || r.bodyBytes.isEmpty) continue;
         final parsed = _parseXmlTv(

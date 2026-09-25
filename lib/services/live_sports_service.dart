@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'm3u_live_service.dart';
 
@@ -50,6 +51,11 @@ class LiveMatch {
       status.toLowerCase().contains('live') ||
       status == '1H' ||
       status == '2H';
+
+  /// Headers HTTP compatibles web : les navigateurs interdisent de définir
+  /// User-Agent (forbidden header) et lèvent une exception sinon.
+  static Map<String, String> get _httpHeaders =>
+      kIsWeb ? {} : {'User-Agent': 'Mozilla/5.0'};
 
   /// Rang d'affichage : grandes compétitions d'abord, œufs brouillés ensuite.
   static int rankForLeague(String league) {
@@ -152,7 +158,7 @@ class LiveSportsService {
         final name = entry.value;
         // Next 5 events pour la ligue
         final url = Uri.parse('https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=$id');
-        final r = await http.get(url, headers: {'User-Agent': 'Mozilla/5.0'}).timeout(const Duration(seconds: 8));
+        final r = await http.get(url, headers: _httpHeaders).timeout(const Duration(seconds: 8));
         if (r.statusCode != 200) continue;
         final j = jsonDecode(r.body);
         final List events = (j['events'] ?? []) as List;
@@ -178,7 +184,7 @@ class LiveSportsService {
     }
     // Aussi les lives du moment
     try {
-      final r = await http.get(Uri.parse('https://www.thesportsdb.com/api/v1/json/3/livescore.php?l=English_Premier_League'), headers: {'User-Agent': 'Mozilla/5.0'}).timeout(const Duration(seconds: 8));
+      final r = await http.get(Uri.parse('https://www.thesportsdb.com/api/v1/json/3/livescore.php?l=English_Premier_League'), headers: _httpHeaders).timeout(const Duration(seconds: 8));
       if (r.statusCode == 200) {
         final j = jsonDecode(r.body);
         final List events = (j['events'] ?? []) as List;
