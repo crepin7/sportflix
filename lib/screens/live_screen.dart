@@ -16,6 +16,7 @@ class _LiveScreenState extends State<LiveScreen> {
   List<LiveMatch> _all = [];
   bool _loading = true;
   String? _error;
+  bool _searchingLive = false;
 
   @override
   void initState() {
@@ -27,30 +28,53 @@ class _LiveScreenState extends State<LiveScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _searchingLive = false;
     });
     try {
       // Phase 1 : calendriers + candidats flux (rapide).
       final list = await _service.fetchAll(forceRefresh: force);
       if (!mounted) return;
+      final sched =
+          list.where((m) => m.streams.isEmpty).toList();
+      final candidates =
+          list.where((m) => m.streams.isNotEmpty).toList();
+      if (kIsWeb) {
+        // Pas de sonde possible sans CORS : on affiche tout de suite.
+        setState(() {
+          _all = list;
+          _loading = false;
+        });
+        await _enrichBadges(list);
+        return;
+      }
+      // On affiche d'abord les horaires, sans les candidats non vérifiés :
+      // pas de cartes qui clignotent puis disparaissent.
       setState(() {
-        _all = list;
+        _all = sched;
         _loading = false;
+        _searchingLive = candidates.isNotEmpty;
       });
-      // Phase 2 : vrais blasons (rapide grâce au cache, converge au fil
-      // des ouvertures) avant la sonde réseau plus lente.
-      await _enrichBadges(list);
+      // Phase 2 : blasons des horaires (cache + seed, rapide).
+      await _enrichBadges(sched);
       if (!mounted) return;
-      // Phase 3 : sonde des flux (retire les rencontres mortes).
-      final verified = await _service.verifyRealStreams(_all);
+      // Phase 3 : sonde des candidats en arrière-plan. Seuls les flux
+      // vérifiés rejoignent la liste ; les morts sont écartés en silence.
+      final verified = await _service.verifyRealStreams(candidates);
       if (!mounted) return;
+      final merged = [...verified, ..._all]
+        ..sort(LiveMatch.displayOrder);
       setState(() {
-        _all = verified;
+        _all = merged;
+        _searchingLive = false;
       });
+      // Phase 4 : blasons des directs vérifiés.
+      await _enrichBadges(verified);
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
+        _searchingLive = false;
       });
     }
   }
@@ -124,19 +148,31 @@ class _LiveScreenState extends State<LiveScreen> {
             child: const Icon(Icons.live_tv, color: Colors.black, size: 20),
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('En direct',
+              const Text('En direct',
                   style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16)),
-              Text('Vrais matchs + scores',
-                  style:
-                      TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+              Text(
+                  _searchingLive
+                      ? 'Recherche des directs…'
+                      : 'Vrais matchs + scores',
+                  style: const TextStyle(
+                      color: AppTheme.textSecondary, fontSize: 11)),
             ]),
           ),
+          if (_searchingLive && !_loading)
+            const Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: AppTheme.primary)),
+            ),
           IconButton(
               onPressed: () => _load(force: true),
               icon: const Icon(Icons.refresh, color: AppTheme.textSecondary)),
