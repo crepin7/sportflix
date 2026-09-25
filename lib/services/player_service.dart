@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -115,7 +116,8 @@ class PlayerService {
         .get(Uri.parse(url), headers: headers)
         .timeout(const Duration(seconds: 8));
     if (r.statusCode != 200) {
-      throw HttpException('Playlist HTTP ${r.statusCode}', uri: Uri.parse(url));
+      // Exception simple (compatible web) : les écrans détectent "Playlist HTTP xxx".
+      throw Exception('Playlist HTTP ${r.statusCode} (${Uri.parse(url).host})');
     }
     final body = r.body;
     if (!body.contains('#EXTM3U') || !body.contains('#EXT-X-STREAM-INF')) {

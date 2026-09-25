@@ -1,0 +1,78 @@
+name: Web Preview (Vercel)
+
+# Comme zovu : chaque push sur main publie une URL de preview éphémère
+# pour tester dans le navigateur sans installer l'APK.
+# Note : la LECTURE VIDÉO ne marche pas sur web (media_kit = natif
+# Android/iOS) — la preview sert à valider navigation, design, EPG,
+# scores et qualité des données. Le flux réel se teste via l'APK.
+#
+# Secrets requis (Settings → Secrets → Actions) :
+#   VERCEL_TOKEN      — token depuis https://vercel.com/account/tokens
+#   VERCEL_ORG_ID     — via `vercel login && vercel link` (.vercel/project.json)
+#   VERCEL_PROJECT_ID — idem (créer un projet Vercel "sportflix" séparé)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test
+
+  web-preview:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Support web (génère web/ si absent)
+        run: |
+          if [ ! -d web ]; then flutter create --platforms=web .; fi
+      - run: flutter build web --release
+      - name: Rewrites SPA pour Flutter web
+        run: cp vercel.json build/web/vercel.json
+      - name: Vérifie secrets Vercel
+        id: secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "${{ secrets.VERCEL_ORG_ID }}" ] || [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Secrets Vercel absents (VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID). Build web OK mais déploiement ignoré."
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Lien projet Vercel (CI)
+        if: steps.secrets.outputs.missing == 'false'
+        run: |
+          mkdir -p build/web/.vercel
+          printf '{"orgId":"%s","projectId":"%s"}' "${{ secrets.VERCEL_ORG_ID }}" "${{ secrets.VERCEL_PROJECT_ID }}" > build/web/.vercel/project.json
+      - name: Deploy preview sur Vercel (CLI officiel latest)
+        id: vercel
+        if: steps.secrets.outputs.missing == 'false'
+        run: |
+          URL=$(npx -y vercel@latest deploy --token=${{ secrets.VERCEL_TOKEN }} --yes | tail -n 1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Preview: $URL"
+        working-directory: ./build/web
+      - name: Commentaire URL preview
+        if: steps.secrets.outputs.missing == 'false'
+        run: >
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments"
+          -f body="Preview web : ${{ steps.vercel.outputs.url }}" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
