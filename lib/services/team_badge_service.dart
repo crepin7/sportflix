@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'team_badge_seed.dart';
 
 /// Logos des vraies équipes, quelle que soit l'équipe.
 ///
@@ -31,7 +32,11 @@ class TeamBadgeService {
     final wanted = <String, String>{}; // norm -> affichage
     for (final n in teamNames) {
       final norm = normName(n);
-      if (norm.length < 3 || _fresh(norm) != null) continue;
+      if (norm.length < 3 ||
+          kSeedTeamBadges.containsKey(norm) ||
+          _fresh(norm) != null) {
+        continue;
+      }
       wanted[norm] = n;
     }
     final found = <String, String>{};
@@ -54,8 +59,13 @@ class TeamBadgeService {
     return found;
   }
 
-  /// Badge connu en cache (frais), '' sinon.
-  String cachedBadge(String teamName) => _fresh(normName(teamName)) ?? '';
+  /// Badge connu en cache (frais) ou dans le seed embarqué, '' sinon.
+  /// Le seed (grands clubs, URLs vérifiées) répond instantanément.
+  String cachedBadge(String teamName) {
+    final seed = kSeedTeamBadges[normName(teamName)];
+    if (seed != null && seed.isNotEmpty) return seed;
+    return _fresh(normName(teamName)) ?? '';
+  }
 
   String? _fresh(String norm) {
     final e = _cache[norm];
