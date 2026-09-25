@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
@@ -21,6 +23,8 @@ class _LivePlayerScreenState extends State<LivePlayerScreen>
   String? _error;
   bool _playing = false;
   int _streamIdx = 0;
+  bool _showControls = true;
+  Timer? _hideTimer;
   List<StreamVariant> _variants = const [];
   StreamVariant? _chosenVariant;
   String _qualityLabel = 'Auto ≤720p';
@@ -42,6 +46,9 @@ class _LivePlayerScreenState extends State<LivePlayerScreen>
           if (p) {
             _loading = false;
             _error = null;
+            // La lecture démarre : on laisse 4s puis on efface les contrôles
+            // pour dégager le score affiché par le flux lui-même.
+            _restartHideTimer();
           }
         });
     });
@@ -194,6 +201,20 @@ class _LivePlayerScreenState extends State<LivePlayerScreen>
     );
   }
 
+  void _toggleControls() {
+    setState(() => _showControls = !_showControls);
+    if (_showControls) _restartHideTimer();
+  }
+
+  void _restartHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted && _playing && _error == null) {
+        setState(() => _showControls = false);
+      }
+    });
+  }
+
   void _switchStream(int i) {
     if (i == _streamIdx) return;
     setState(() {
@@ -208,6 +229,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _hideTimer?.cancel();
     _playerService.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations(
@@ -231,7 +253,10 @@ class _LivePlayerScreenState extends State<LivePlayerScreen>
       },
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Stack(fit: StackFit.expand, children: [
+        body: GestureDetector(
+          onTap: _toggleControls,
+          behavior: HitTestBehavior.opaque,
+          child: Stack(fit: StackFit.expand, children: [
           Center(child: Video(controller: _playerService.controller)),
           if (_loading)
             const Center(
@@ -260,7 +285,8 @@ class _LivePlayerScreenState extends State<LivePlayerScreen>
                               foregroundColor: Colors.black),
                           child: const Text('Réessayer'))
                     ]))),
-          Positioned(
+          if (_showControls)
+            Positioned(
             top: 0,
             left: 0,
             right: 0,
@@ -321,7 +347,10 @@ class _LivePlayerScreenState extends State<LivePlayerScreen>
           ),
           // Sélecteur de source quand plusieurs flux réels (ex: beIN Ñ,
           // FAWA, STRMCNTR). Chaque source = commentateur/qualité différent.
-          if (widget.match.streams.length > 1 && !_loading && _error == null)
+          if (_showControls &&
+              widget.match.streams.length > 1 &&
+              !_loading &&
+              _error == null)
             Positioned(
               left: 0,
               right: 0,
@@ -368,7 +397,8 @@ class _LivePlayerScreenState extends State<LivePlayerScreen>
                 ),
               ),
             ),
-        ]),
+          ]),
+        ),
       ),
     );
   }
