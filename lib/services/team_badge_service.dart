@@ -34,6 +34,7 @@ class TeamBadgeService {
       final norm = normName(n);
       if (norm.length < 3 ||
           kSeedTeamBadges.containsKey(norm) ||
+          kSeedCountryFlags.containsKey(norm) ||
           _fresh(norm) != null) {
         continue;
       }
@@ -59,12 +60,17 @@ class TeamBadgeService {
     return found;
   }
 
-  /// Badge connu en cache (frais) ou dans le seed embarqué, '' sinon.
-  /// Le seed (grands clubs, URLs vérifiées) répond instantanément.
+  /// Badge connu : seed clubs (instantané), drapeaux pays (déterministe),
+  /// puis cache réseau 90j. '' sinon.
   String cachedBadge(String teamName) {
-    final seed = kSeedTeamBadges[normName(teamName)];
+    final norm = normName(teamName);
+    final seed = kSeedTeamBadges[norm];
     if (seed != null && seed.isNotEmpty) return seed;
-    return _fresh(normName(teamName)) ?? '';
+    final iso = kSeedCountryFlags[norm];
+    if (iso != null && iso.isNotEmpty) {
+      return 'https://flagcdn.com/w80/$iso.png';
+    }
+    return _fresh(norm) ?? '';
   }
 
   String? _fresh(String norm) {
