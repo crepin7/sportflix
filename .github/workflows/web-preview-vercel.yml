@@ -61,11 +61,11 @@ jobs:
         run: |
           mkdir -p build/web/.vercel
           printf '{"orgId":"%s","projectId":"%s"}' "${{ secrets.VERCEL_ORG_ID }}" "${{ secrets.VERCEL_PROJECT_ID }}" > build/web/.vercel/project.json
-      - name: Deploy preview sur Vercel (CLI officiel latest)
+      - name: Deploy preview sur Vercel (CLI pinglé v59, v60 casse --token)
         id: vercel
         if: steps.secrets.outputs.missing == 'false'
         run: |
-          URL=$(npx -y vercel@latest deploy --token=${{ secrets.VERCEL_TOKEN }} --yes | tail -n 1)
+          URL=$(npx -y vercel@59.26.0 deploy --token=${{ secrets.VERCEL_TOKEN }} --yes | tail -n 1)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Preview: $URL"
         working-directory: ./build/web
