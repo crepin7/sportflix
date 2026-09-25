@@ -130,13 +130,10 @@ class EpgService {
     return (cur, next);
   }
 
+  /// Les couches HTTP (dart:io autoUncompress, fetch navigateur) décompressent
+  /// déjà le gzip : les bytes reçus sont du XML en clair.
   String _gunzip(List<int> bytes) {
-    try {
-      return utf8.decode(GZipCodec().decode(bytes),
-          allowMalformed: true);
-    } catch (_) {
-      return utf8.decode(bytes, allowMalformed: true);
-    }
+    return utf8.decode(bytes, allowMalformed: true);
   }
 
   /// Parse événementiel (faible mémoire) : ne garde que les [wanted].
