@@ -96,13 +96,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        'Sportflix',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
-                          letterSpacing: 1.2,
+                      RichText(
+                        text: const TextSpan(
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'Sport',
+                              style:
+                                  TextStyle(color: AppTheme.textPrimary),
+                            ),
+                            TextSpan(
+                              text: 'flix',
+                              style: TextStyle(color: AppTheme.primary),
+                            ),
+                          ],
                         ),
                       ),
                     ],
