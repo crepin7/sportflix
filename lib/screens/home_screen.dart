@@ -74,7 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = _channelService.categories;
+    // 'Toutes' puis 'Football' en premier, le reste en alpha.
+    final categories = _channelService.categories.toList()
+      ..remove('Football');
+    final orderedCats = ['Football', ...categories];
 
     return Scaffold(
       body: SafeArea(
@@ -168,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         _buildCategoryChip(null, 'Toutes'),
                         const SizedBox(width: 8),
-                        ...categories.map((cat) => Padding(
+                        ...orderedCats.map((cat) => Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: _buildCategoryChip(cat, cat),
                             )),
