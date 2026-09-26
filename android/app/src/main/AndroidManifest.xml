@@ -4,7 +4,7 @@
         android:label="Sportflix"
         android:usesCleartextTraffic="true"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher">
 
         <!-- Start.io (StartApp) — App ID from portal.start.io → My Apps. -->
         <meta-data
