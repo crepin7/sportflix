@@ -183,15 +183,22 @@ class _LiveScreenState extends State<LiveScreen> {
 
   Widget _body() {
     if (_loading && _all.isEmpty)
-      // Ouverture : squelettes immédiats au lieu d'un spinner bloquant.
-      // L'utilisateur voit l'écran et peut scroller pendant le chargement.
+      // Ouverture : squelettes immédiats des deux sections au lieu d'un
+      // spinner bloquant. L'utilisateur voit la structure pendant le chargement.
       return ListView(
         padding: const EdgeInsets.all(12),
         children: [
           _sectionHeader('En direct', 0, Colors.greenAccent, Icons.live_tv,
               searching: true),
           const SizedBox(height: 10),
-          for (var i = 0; i < 4; i++) ...[
+          for (var i = 0; i < 2; i++) ...[
+            _skeletonCard(),
+            const SizedBox(height: 10),
+          ],
+          _sectionHeader("À l'affiche", 0, Colors.amber, Icons.emoji_events,
+              searching: true),
+          const SizedBox(height: 10),
+          for (var i = 0; i < 2; i++) ...[
             _skeletonCard(),
             const SizedBox(height: 10),
           ],
