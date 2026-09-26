@@ -74,14 +74,14 @@ class ChannelService {
       name: 'Arryadia (Maroc)',
       streamUrl: 'http://149.100.11.252:8000/play/a065/index.m3u8',
       logoUrl: 'https://i.imgur.com/XjzK3gZ.png',
-      category: 'Arabe',
+      category: 'Généraliste',
     ),
     const Channel(
       id: 'aliraqia_sport',
       name: 'Al Iraqia Sport',
       streamUrl: 'https://imn-live.esite-lab.com/hls/iraqia-sports-1.m3u8',
       logoUrl: 'https://i.imgur.com/DrrlxTO.png',
-      category: 'Arabe',
+      category: 'Généraliste',
     ),
     const Channel(
       id: 'bahrain_sport_1',
@@ -89,7 +89,14 @@ class ChannelService {
       streamUrl:
           'https://5c7b683162943.streamlock.net/live/ngrp:sportsone_all/playlist.m3u8',
       logoUrl: 'https://i.imgur.com/fBpLsbC.png',
-      category: 'Arabe',
+      category: 'Généraliste',
+    ),
+    const Channel(
+      id: 'nba_tv',
+      name: 'NBA TV',
+      streamUrl: 'http://23.237.104.106:8080/USA_NBA/index.m3u8',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/NBA_TV.svg/960px-NBA_TV.svg.png',
+      category: 'Basketball',
     ),
   ];
 
