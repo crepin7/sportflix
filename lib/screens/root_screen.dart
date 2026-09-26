@@ -16,7 +16,12 @@ class _RootScreenState extends State<RootScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_idx],
+      // IndexedStack : les deux onglets restent en vie, plus de
+      // rechargement quand on alterne Chaînes <-> En direct.
+      body: IndexedStack(
+        index: _idx,
+        children: _pages,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppTheme.surface,
