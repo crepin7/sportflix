@@ -217,14 +217,23 @@ class _LiveScreenState extends State<LiveScreen> {
             onPressed: () => _load(force: true),
             child: const Text('Actualiser'))
       ]));
-    final featured = _all.where((m) => m.leagueRank <= 7).toList();
-    final others = _all
+    // Zone En direct TOUJOURS en premier : matchs vérifiés, ou squelettes
+    // pendant la recherche (jamais un écran vide de génériques seuls).
+    final live = _all
         .where((m) =>
-            m.leagueRank > 7 && m.streams.isNotEmpty && m.streamState != 'dead')
+            m.isVerifiedLive || (kIsWeb && m.isPendingCheck))
+        .toList();
+    final featured = _all
+        .where((m) =>
+            m.leagueRank <= 7 &&
+            !m.isVerifiedLive &&
+            !(kIsWeb && m.isPendingCheck))
         .toList();
     final sched = _all
         .where((m) =>
-            m.leagueRank > 7 && (m.streams.isEmpty || m.streamState == 'dead'))
+            m.leagueRank > 7 &&
+            !m.isVerifiedLive &&
+            !(kIsWeb && m.isPendingCheck))
         .toList();
     Widget section(String title, int count, Color color, IconData icon,
         List<LiveMatch> items) {
@@ -241,6 +250,7 @@ class _LiveScreenState extends State<LiveScreen> {
       );
     }
 
+    final showSkeletons = _searchingLive && !kIsWeb;
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
       color: AppTheme.primary,
@@ -248,12 +258,29 @@ class _LiveScreenState extends State<LiveScreen> {
       child: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          if (live.isNotEmpty || showSkeletons)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _sectionHeader('En direct', live.length,
+                    Colors.greenAccent, Icons.live_tv,
+                    searching: showSkeletons),
+                const SizedBox(height: 10),
+                for (final m in live) ...[
+                  _matchCard(m),
+                  const SizedBox(height: 10),
+                ],
+                if (showSkeletons && live.isEmpty) ...[
+                  for (var i = 0; i < 3; i++) ...[
+                    _skeletonCard(),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+              ],
+            ),
           if (featured.isNotEmpty)
             section("À l'affiche", featured.length, Colors.amber,
                 Icons.emoji_events, featured),
-          if (others.isNotEmpty)
-            section('Autres directs', others.length, Colors.greenAccent,
-                Icons.live_tv, others),
           if (sched.isNotEmpty)
             section('Horaires', sched.length, AppTheme.textSecondary,
                 Icons.schedule, sched),
@@ -262,7 +289,8 @@ class _LiveScreenState extends State<LiveScreen> {
     );
   }
 
-  Widget _sectionHeader(String title, int count, Color color, IconData icon) {
+  Widget _sectionHeader(String title, int count, Color color, IconData icon,
+      {bool searching = false}) {
     return Row(children: [
       Icon(icon, color: color, size: 16),
       const SizedBox(width: 8),
@@ -276,11 +304,69 @@ class _LiveScreenState extends State<LiveScreen> {
           color: AppTheme.surfaceLight,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text('$count',
+        child: Text(searching ? '…' : '$count',
             style:
                 const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
       ),
+      if (searching) ...[
+        const SizedBox(width: 8),
+        const SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+                strokeWidth: 2, color: Colors.greenAccent)),
+      ],
     ]);
+  }
+
+  /// Carte d'attente pendant la recherche des directs.
+  Widget _skeletonCard() {
+    BoxDecoration box(Color c) => BoxDecoration(
+        color: c, borderRadius: BorderRadius.circular(8));
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.surfaceLight),
+      ),
+      child: Column(children: [
+        Row(children: [
+          Container(width: 110, height: 18, decoration: box(AppTheme.surfaceLight)),
+          const Spacer(),
+          Container(width: 70, height: 18, decoration: box(AppTheme.surfaceLight)),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+              child: Column(children: [
+            Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                    color: AppTheme.surfaceLight, shape: BoxShape.circle)),
+            const SizedBox(height: 6),
+            Container(width: 70, height: 12, decoration: box(AppTheme.surfaceLight)),
+          ])),
+          Container(width: 60, height: 30, decoration: box(AppTheme.surfaceLight)),
+          Expanded(
+              child: Column(children: [
+            Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                    color: AppTheme.surfaceLight, shape: BoxShape.circle)),
+            const SizedBox(height: 6),
+            Container(width: 70, height: 12, decoration: box(AppTheme.surfaceLight)),
+          ])),
+        ]),
+        const SizedBox(height: 10),
+        Container(
+            width: double.infinity,
+            height: 40,
+            decoration: box(AppTheme.surfaceLight)),
+      ]),
+    );
   }
 
   Widget _matchCard(LiveMatch m) {
